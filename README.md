@@ -1,10 +1,10 @@
-# Taxi City
+# Xenomite
 
 Unity game for CSCI 3836 (Saint Mary's University), group project.
 
 ## Setup
 1. Install [Git LFS](https://git-lfs.com) once: `git lfs install`
-2. Clone: `git clone https://github.com/Guard33/taxi-city.git`
+2. Clone: `git clone https://github.com/Guard33/xenomite.git`
 3. Open the folder in Unity Hub (everyone use the same Unity version).
 
 ## Rules to avoid merge pain
