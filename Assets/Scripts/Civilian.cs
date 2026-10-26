@@ -1,0 +1,131 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+// A civilian walks around near home. When the alien comes close, the civilian
+// gets scared, runs faster and follows the roads to the closest exit.
+public class Civilian : MonoBehaviour
+{
+    public static readonly List<Civilian> All = new List<Civilian>();
+
+    public float walkSpeed = 1f;
+    public float runSpeed = 2.2f;      // faster once alerted (from our outline)
+    public float wanderRadius = 1f;
+    public float alertRadius = 2.5f;
+    public Sprite heartSprite;
+
+    private Vector2 home;
+    private Vector2 target;
+    private float waitTimer;
+    private bool alerted;
+    private bool gone;
+    private readonly List<Vector2> route = new List<Vector2>();
+    private Transform alien;
+    private SpriteRenderer sr;
+
+    public bool CanBeBefriended => !gone;
+
+    void OnEnable() { All.Add(this); }
+    void OnDisable() { All.Remove(this); }
+
+    void Start()
+    {
+        home = transform.position;
+        target = home;
+        sr = GetComponent<SpriteRenderer>();
+        AlienPlayer player = FindFirstObjectByType<AlienPlayer>();
+        if (player != null) alien = player.transform;
+        waitTimer = Random.Range(0.5f, 2.5f);
+    }
+
+    void Update()
+    {
+        if (gone) return;
+
+        if (!alerted && alien != null &&
+            Vector2.Distance(alien.position, transform.position) < alertRadius)
+        {
+            alerted = true;
+            route.Clear();
+            route.AddRange(RoadNetwork.RouteToClosestExit(transform.position));
+        }
+
+        if (alerted) Run();
+        else Wander();
+    }
+
+    void Wander()
+    {
+        if (waitTimer > 0f)
+        {
+            waitTimer -= Time.deltaTime;
+            return;
+        }
+        MoveTowards(target, walkSpeed);
+        if (Vector2.Distance(transform.position, target) < 0.05f)
+        {
+            target = home + Random.insideUnitCircle * wanderRadius;
+            waitTimer = Random.Range(1f, 3f);
+        }
+    }
+
+    void Run()
+    {
+        if (route.Count == 0)
+        {
+            Escape();
+            return;
+        }
+        MoveTowards(route[0], runSpeed);
+        if (Vector2.Distance(transform.position, route[0]) < 0.05f)
+            route.RemoveAt(0);
+    }
+
+    void MoveTowards(Vector2 point, float speed)
+    {
+        if (sr != null && Mathf.Abs(point.x - transform.position.x) > 0.01f)
+            sr.flipX = point.x < transform.position.x;
+        transform.position = Vector2.MoveTowards(transform.position, point, speed * Time.deltaTime);
+    }
+
+    void Escape()
+    {
+        gone = true;
+        if (LevelManager.Instance != null) LevelManager.Instance.PersonEscaped();
+        Destroy(gameObject);
+    }
+
+    public void Befriend()
+    {
+        if (gone) return;
+        gone = true;
+        if (LevelManager.Instance != null) LevelManager.Instance.PersonBefriended();
+        StartCoroutine(BeamUpToUfo());
+    }
+
+    // A heart pops up, then the new friend is teleported to the UFO.
+    IEnumerator BeamUpToUfo()
+    {
+        if (heartSprite != null)
+        {
+            GameObject heart = new GameObject("Heart");
+            heart.transform.SetParent(transform, false);
+            heart.transform.localPosition = new Vector3(0f, 0.8f, 0f);
+            SpriteRenderer hs = heart.AddComponent<SpriteRenderer>();
+            hs.sprite = heartSprite;
+            hs.sortingOrder = 30000;
+        }
+
+        Vector3 startScale = transform.localScale;
+        float t = 0f;
+        while (t < 0.7f)
+        {
+            t += Time.deltaTime;
+            float k = t / 0.7f;
+            transform.localScale = Vector3.Lerp(startScale, new Vector3(0.1f, 1.8f, 1f), k);
+            if (sr != null) sr.color = new Color(1f, 1f, 1f, 1f - k);
+            yield return null;
+        }
+        Destroy(gameObject);
+    }
+}

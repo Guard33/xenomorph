@@ -1,0 +1,12 @@
+ART CREDITS (put these in the game credits)
+
+- Tiny Tile Town by Aleksandr Makarov (@IknowKingRabbit)
+  Free to use and change. The license asks that he is credited in the game credits,
+  and that the asset pack is not uploaded publicly on its own (keep the GitHub repo private).
+
+- Town Folk Sprites by freezepops (itch.io) - CC0 (public domain, no credit needed).
+
+Art/Level1Pieces:
+  Pieces cut out of the two packs above for Level 1.
+  sign, bridge, exit_marker and heart are small extra sprites made for this level.
+  alien_placeholder is a darkened Town Folk villager, used until our alien sprite is ready.
