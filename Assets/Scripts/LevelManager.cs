@@ -16,6 +16,7 @@ public class LevelManager : MonoBehaviour
 
     private int friends;
     private int escaped;
+    private bool gameOver;
     private string bigMessage;
     private string signText;
     private Object signOwner;
@@ -36,8 +37,22 @@ public class LevelManager : MonoBehaviour
     public void PersonEscaped()
     {
         escaped++;
-        if (friends < friendsNeeded && totalPeople - escaped < friendsNeeded)
-            bigMessage = "Too many people escaped!\nPress R to try again.";
+        if (friends < friendsNeeded && totalPeople - escaped < friendsNeeded && !gameOver)
+        {
+            gameOver = true;
+            bigMessage = "Too many people escaped!";
+            GameResult.Friends = friends;
+            GameResult.Escaped = escaped;
+            GameResult.Needed = friendsNeeded;
+            Invoke(nameof(ShowGameOver), 1.5f);
+        }
+    }
+
+    // Go to the game over screen (if it is in the build), otherwise stay and wait for R
+    void ShowGameOver()
+    {
+        if (Application.CanStreamedLevelBeLoaded("GameOver")) SceneManager.LoadScene("GameOver");
+        else bigMessage = "Too many people escaped!\nPress R to try again.";
     }
 
     public void SetSign(Object owner, string text)
@@ -72,7 +87,7 @@ public class LevelManager : MonoBehaviour
         GUI.Box(new Rect(10, 10, 360, 84), GUIContent.none, boxStyle);
         GUI.Label(new Rect(20, 14, 350, 26), "Friends: " + friends + " / " + friendsNeeded + "     Escaped: " + escaped, textStyle);
         GUI.Label(new Rect(20, 40, 350, 26), "WASD / arrows: move", textStyle);
-        GUI.Label(new Rect(20, 64, 350, 26), "SPACE near a person: befriend", textStyle);
+        GUI.Label(new Rect(20, 64, 350, 26), "SPACE: befriend     M: mini map", textStyle);
 
         // Friendship (EXP) meter at the bottom, like in our outline
         float w = Mathf.Min(600, Screen.width - 40);

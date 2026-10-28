@@ -259,6 +259,7 @@ public static class Level1Builder
 
         // --- level manager (score + friendship meter)
         new GameObject("Level Manager").AddComponent<LevelManager>();
+        new GameObject("Mini Map").AddComponent<MiniMap>();
 
         // --- camera
         Camera cam = Object.FindFirstObjectByType<Camera>();
