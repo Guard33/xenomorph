@@ -66,7 +66,7 @@ public class TutorialGuide : MonoBehaviour
             case Step.Move: return "Move with  W A S D";
             case Step.Beam: return "Face someone and press  H  to befriend them";
             case Step.Exits: return "Scared people run for the exits";
-            case Step.Lookouts: return "Yellow circle = lookout. Beam them before they sound the alarm";
+            case Step.Lookouts: return "Yellow circle = lookout. Beam them first!";
             case Step.Goal: return "Befriend 10 people to evolve";
         }
         return null;
