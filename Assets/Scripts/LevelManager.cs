@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 
 // Keeps score for level 1: befriend 10 of the 20 people (10 EXP each).
 // The level is lost if 11 or more escape (can no longer win) or the alien's HP reaches 0.
-// Also draws the HUD: friends/escaped, HP, the H J K L skill bar and the friendship meter.
+// Also draws the HUD: friends bar, escaped count, unlocked skill keys, and HP when the alien can die.
 public class LevelManager : MonoBehaviour
 {
     public static LevelManager Instance { get; private set; }
@@ -24,7 +24,6 @@ public class LevelManager : MonoBehaviour
     private string flashText;
     private float flashTimer;
     private AlienPlayer alien;
-    private GUIStyle boxStyle, textStyle, bigStyle, keyStyle, smallStyle;
 
     public int Friends => friends;
     public int Escaped => escaped;
@@ -97,72 +96,56 @@ public class LevelManager : MonoBehaviour
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
     }
 
-    void MakeStyles()
-    {
-        boxStyle = new GUIStyle(GUI.skin.box);
-        textStyle = new GUIStyle(GUI.skin.label) { fontSize = 18, fontStyle = FontStyle.Bold };
-        textStyle.normal.textColor = Color.white;
-        bigStyle = new GUIStyle(GUI.skin.box) { fontSize = 26, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter, wordWrap = true };
-        bigStyle.normal.textColor = Color.white;
-        keyStyle = new GUIStyle(GUI.skin.label) { fontSize = 22, fontStyle = FontStyle.Bold, alignment = TextAnchor.UpperCenter };
-        keyStyle.normal.textColor = Color.white;
-        smallStyle = new GUIStyle(GUI.skin.label) { fontSize = 12, alignment = TextAnchor.LowerCenter, wordWrap = true };
-        smallStyle.normal.textColor = Color.white;
-    }
-
+    // Small HUD: score top-left (plus HP when the alien can be hurt), friendship meter
+    // bottom-left, H J K L skill bar bottom-right. The mini map draws itself top-right.
     void OnGUI()
     {
-        if (boxStyle == null) MakeStyles();
+        float k = Hud.Scale;
+        float W = Screen.width, H = Screen.height;
 
-        // Top-left: score and HP
-        GUI.Box(new Rect(10, 10, 300, 66), GUIContent.none, boxStyle);
-        GUI.Label(new Rect(20, 14, 290, 26), "Friends: " + friends + " / " + friendsNeeded + "     Escaped: " + escaped, textStyle);
-        GUI.Label(new Rect(20, 42, 40, 26), "HP", textStyle);
-        if (alien != null)
+        // Top-left: friends and escaped
+        Hud.Text(new Rect(14f * k, 10f * k, 400f * k, 22f * k), "Friends  " + friends + " / " + friendsNeeded, 15, Color.white, TextAnchor.MiddleLeft, true);
+        Hud.Text(new Rect(14f * k, 30f * k, 400f * k, 22f * k), "Escaped  " + escaped, 15, escaped > 0 ? new Color(1f, 0.6f, 0.55f) : new Color(1f, 1f, 1f, 0.8f), TextAnchor.MiddleLeft, true);
+
+        // HP under the score, only when it matters
+        if (alien != null && alienCanDie)
             for (int i = 0; i < alien.maxHp; i++)
-                DrawRect(new Rect(56 + i * 26, 46, 20, 18), i < alien.Hp ? new Color(0.95f, 0.3f, 0.35f) : new Color(1f, 1f, 1f, 0.25f));
+                Hud.Fill(new Rect(14f * k + i * 16f * k, 56f * k, 12f * k, 12f * k), i < alien.Hp ? new Color(0.95f, 0.3f, 0.35f) : new Color(1f, 1f, 1f, 0.25f));
 
-        // Bottom-centre: friendship (EXP) meter
-        float w = Mathf.Min(520, Screen.width - 340);
-        float x = 20f;
-        float y = Screen.height - 50;
-        GUI.Label(new Rect(x, y - 26, w, 24), "Friendship meter  " + Exp + " / " + ExpNeeded + " EXP", textStyle);
-        DrawRect(new Rect(x, y, w, 26), new Color(1f, 1f, 1f, 0.85f));
-        DrawRect(new Rect(x + 3, y + 3, (w - 6) * Mathf.Clamp01((float)Exp / ExpNeeded), 20), new Color(0.96f, 0.45f, 0.68f));
+        // Bottom-left: friendship meter
+        float bw = 220f * k, bh = 8f * k;
+        float bx = 14f * k, by = H - 22f * k;
+        Hud.Text(new Rect(bx, by - 22f * k, bw + 100f * k, 20f * k), "Friendship  " + Exp + " / " + ExpNeeded, 13, Color.white, TextAnchor.MiddleLeft);
+        Hud.Fill(new Rect(bx, by, bw, bh), new Color(0f, 0f, 0f, 0.45f));
+        Hud.Fill(new Rect(bx, by, bw * Mathf.Clamp01((float)Exp / ExpNeeded), bh), new Color(0.96f, 0.45f, 0.68f));
 
         // Bottom-right: skill bar H J K L
-        if (alien != null) DrawSkillBar();
+        if (alien != null) DrawSkills(k);
 
         if (flashTimer > 0f && !string.IsNullOrEmpty(flashText))
-            GUI.Box(new Rect(Screen.width / 2f - 260, Screen.height * 0.28f, 520, 44), flashText, bigStyle);
+            Hud.Text(new Rect(0, H * 0.3f, W, 30f * k), flashText, 18, new Color(1f, 0.9f, 0.5f, Mathf.Clamp01(flashTimer * 2f)), TextAnchor.MiddleCenter, true);
 
         if (!string.IsNullOrEmpty(bigMessage))
-            GUI.Box(new Rect(Screen.width / 2f - 330, Screen.height / 2f - 70, 660, 140), bigMessage, bigStyle);
-    }
-
-    void DrawSkillBar()
-    {
-        const float size = 64f, gap = 8f;
-        int n = alien.skills.Length;
-        float x0 = Screen.width - n * (size + gap) - 12f;
-        float y0 = Screen.height - size - 14f;
-        for (int i = 0; i < n; i++)
         {
-            AlienSkill s = alien.skills[i];
-            Rect r = new Rect(x0 + i * (size + gap), y0, size, size);
-            DrawRect(r, s.unlocked ? new Color(0.15f, 0.45f, 0.25f, 0.9f) : new Color(0.2f, 0.2f, 0.2f, 0.75f));
-            if (s.unlocked && !s.Ready)
-                DrawRect(new Rect(r.x, r.y, r.width, r.height * s.Cooldown01), new Color(0f, 0f, 0f, 0.55f));
-            GUI.Label(new Rect(r.x, r.y + 4, r.width, 28), s.key, keyStyle);
-            GUI.Label(new Rect(r.x + 2, r.y, r.width - 4, r.height - 4), s.unlocked ? s.name : "locked", smallStyle);
+            Hud.Fill(new Rect(0, H / 2f - 50f * k, W, 100f * k), new Color(0f, 0f, 0f, 0.55f));
+            Hud.Text(new Rect(0, H / 2f - 50f * k, W, 100f * k), bigMessage, 22, Color.white, TextAnchor.MiddleCenter, true);
         }
     }
 
-    static void DrawRect(Rect r, Color c)
+    void DrawSkills(float k)
     {
-        Color old = GUI.color;
-        GUI.color = c;
-        GUI.DrawTexture(r, Texture2D.whiteTexture);
-        GUI.color = old;
+        float size = 34f * k, gap = 6f * k;
+        float x = Screen.width - 14f * k - size;
+        for (int i = alien.skills.Length - 1; i >= 0; i--)
+        {
+            AlienSkill s = alien.skills[i];
+            Rect r = new Rect(x, Screen.height - 14f * k - size, size, size);
+            Hud.Fill(r, new Color(0f, 0f, 0f, s.unlocked ? 0.45f : 0.25f));
+            if (s.unlocked && !s.Ready)
+                Hud.Fill(new Rect(r.x, r.y, r.width, r.height * s.Cooldown01), new Color(0f, 0f, 0f, 0.5f));
+            Color c = !s.unlocked ? new Color(1f, 1f, 1f, 0.25f) : s.Ready ? new Color(0.55f, 1f, 0.6f) : new Color(1f, 1f, 1f, 0.4f);
+            Hud.Text(r, s.key, 18, c, TextAnchor.MiddleCenter, true);
+            x -= size + gap;
+        }
     }
 }
