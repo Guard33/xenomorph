@@ -9,13 +9,14 @@ using UnityEngine.InputSystem;
 public class MiniMap : MonoBehaviour
 {
     public int pixelsPerTile = 4;
-    public float screenScale = 1.5f;
-    public bool visible = true;
+    public float mapScale = 1f;         // on a 1080p screen
+    public bool showOnStart = true;
+
+    private bool visible;
 
     private Texture2D mapTexture;
     private Transform alien;
     private Vector2 ufoPosition;
-    private GUIStyle labelStyle;
 
     static readonly Color Grass = new Color32(96, 160, 72, 255);
     static readonly Color Road = new Color32(170, 120, 70, 255);
@@ -33,6 +34,7 @@ public class MiniMap : MonoBehaviour
         GameObject ufo = GameObject.Find("UFO (start)");
         ufoPosition = ufo != null ? (Vector2)ufo.transform.position + Vector2.one : RoadNetwork.TileCenter(Level1Data.Start);
 
+        visible = showOnStart;
         BuildTexture();
     }
 
@@ -91,29 +93,22 @@ public class MiniMap : MonoBehaviour
     void OnGUI()
     {
         if (!visible || mapTexture == null) return;
-        if (labelStyle == null)
-        {
-            labelStyle = new GUIStyle(GUI.skin.label) { fontSize = 14, fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-            labelStyle.normal.textColor = Color.white;
-        }
-
-        float w = mapTexture.width * screenScale, h = mapTexture.height * screenScale;
-        Rect r = new Rect(Screen.width - w - 14, 14, w, h);
-        DrawRect(new Rect(r.x - 4, r.y - 4, w + 8, h + 30), new Color(0f, 0f, 0f, 0.65f));
+        float k = Mathf.Max(0.75f, Screen.height / 1080f) * mapScale;
+        float w = mapTexture.width * k, h = mapTexture.height * k;
+        Rect r = new Rect(Screen.width - w - 12, 12, w, h);
+        DrawRect(new Rect(r.x - 2, r.y - 2, w + 4, h + 4), new Color(0f, 0f, 0f, 0.5f));
         GUI.DrawTexture(r, mapTexture);
 
-        Mark(r, RoadNetwork.TileCenter(Level1Data.ExitA), new Color(1f, 0.15f, 0.15f), 9);
-        Mark(r, RoadNetwork.TileCenter(Level1Data.ExitB), new Color(1f, 0.15f, 0.15f), 9);
-        Mark(r, ufoPosition, new Color(0.8f, 0.8f, 0.85f), 8);
+        Mark(r, RoadNetwork.TileCenter(Level1Data.ExitA), new Color(1f, 0.15f, 0.15f), 7 * k);
+        Mark(r, RoadNetwork.TileCenter(Level1Data.ExitB), new Color(1f, 0.15f, 0.15f), 7 * k);
+        Mark(r, ufoPosition, new Color(0.8f, 0.8f, 0.85f), 6 * k);
         foreach (Civilian c in Civilian.All)
-            if (c.CanBeBefriended) Mark(r, c.transform.position, Color.white, 5);
+            if (c.CanBeBefriended) Mark(r, c.transform.position, Color.white, 4 * k);
         if (alien != null)
         {
-            Mark(r, alien.position, Color.black, 10);
-            Mark(r, alien.position, new Color(0.3f, 1f, 0.4f), 7);
+            Mark(r, alien.position, Color.black, 8 * k);
+            Mark(r, alien.position, new Color(0.3f, 1f, 0.4f), 6 * k);
         }
-
-        GUI.Label(new Rect(r.x, r.y + h + 2, w, 22), "Mini map  (M to hide)", labelStyle);
     }
 
     void Mark(Rect r, Vector2 world, Color color, float size)

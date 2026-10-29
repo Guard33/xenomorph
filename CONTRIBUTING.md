@@ -1,4 +1,4 @@
-# How we work on Xenomite
+# How we work on Xenomorph
 
 Short version: **pull → make a branch → work → commit → push → pull request → merge.** Nobody pushes straight to `main`.
 

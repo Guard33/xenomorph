@@ -1,4 +1,4 @@
-# Xenomite
+# Xenomorph
 
 Unity game for CSCI 3836 (Saint Mary's University), group project.
 

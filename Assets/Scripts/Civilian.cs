@@ -13,6 +13,9 @@ public class Civilian : MonoBehaviour
     public float wanderRadius = 1f;
     public float alertRadius = 2.5f;
     public Sprite heartSprite;
+    public bool holdsPosition;         // lookouts stay put and raise the alarm instead of running
+
+    public bool IsAlerted => alerted;
 
     private Vector2 home;
     private Vector2 target;
@@ -42,20 +45,40 @@ public class Civilian : MonoBehaviour
     {
         if (gone) return;
 
-        if (!alerted && alien != null &&
+        if (!alerted && !holdsPosition && alien != null &&
             Vector2.Distance(alien.position, transform.position) < alertRadius)
-        {
-            alerted = true;
-            route.Clear();
-            route.AddRange(RoadNetwork.RouteToClosestExit(transform.position));
-        }
+            Alert();
 
         if (alerted) Run();
         else Wander();
     }
 
+    // Scared: run along the roads to the closest exit
+    public void Alert()
+    {
+        if (alerted || gone || holdsPosition) return;
+        alerted = true;
+        route.Clear();
+        route.AddRange(RoadNetwork.RouteToClosestExit(transform.position));
+    }
+
+    // Everyone within radius of a point gets scared (used by the lookouts' alarm)
+    public static int AlertAround(Vector2 point, float radius)
+    {
+        int count = 0;
+        foreach (Civilian c in All.ToArray())
+        {
+            if (c.alerted || c.gone || c.holdsPosition) continue;
+            if (Vector2.Distance(c.transform.position, point) > radius) continue;
+            c.Alert();
+            count++;
+        }
+        return count;
+    }
+
     void Wander()
     {
+        if (holdsPosition) return;   // lookouts stand guard
         if (waitTimer > 0f)
         {
             waitTimer -= Time.deltaTime;

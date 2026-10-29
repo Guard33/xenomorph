@@ -14,8 +14,6 @@ public class MenuScreen : MonoBehaviour
     public string gameScene = "Level1";
     public string startScene = "StartScreen";
 
-    private GUIStyle titleStyle, subStyle, buttonStyle, smallStyle;
-
     void Update()
     {
 #if ENABLE_INPUT_SYSTEM
@@ -37,58 +35,38 @@ public class MenuScreen : MonoBehaviour
         else Application.Quit();
     }
 
-    void MakeStyles()
-    {
-        int h = Screen.height;
-        titleStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.Max(36, h / 8), fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleCenter };
-        subStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.Max(18, h / 28), alignment = TextAnchor.MiddleCenter, wordWrap = true };
-        subStyle.normal.textColor = Color.white;
-        buttonStyle = new GUIStyle(GUI.skin.button) { fontSize = Mathf.Max(18, h / 26), fontStyle = FontStyle.Bold };
-        smallStyle = new GUIStyle(GUI.skin.label) { fontSize = Mathf.Max(14, h / 40), alignment = TextAnchor.MiddleCenter };
-        smallStyle.normal.textColor = new Color(1f, 1f, 1f, 0.85f);
-    }
-
+    // Same pixel-art style as the in-game HUD (PixelFont + Hud panels and buttons)
     void OnGUI()
     {
-        if (titleStyle == null) MakeStyles();
-        float W = Screen.width, H = Screen.height;
+        float W = Screen.width, H = Screen.height, k = Hud.Scale;
         bool start = kind == Kind.Start;
 
         string title = start ? gameTitle : "GAME OVER";
         Color titleColor = start ? new Color(0.55f, 1f, 0.6f) : new Color(1f, 0.35f, 0.35f);
-        Shadow(new Rect(0, H * 0.12f, W, H * 0.2f), title, titleStyle, titleColor);
+        Hud.Text(new Rect(0, H * 0.14f, W, H * 0.16f), title, 72, titleColor);
 
         string sub = start
-            ? "A lonely alien crash-lands on Earth.\nCatch the people before they escape!"
-            : "Too many people escaped!\nFriends: " + GameResult.Friends + " / " + GameResult.Needed + "      Escaped: " + GameResult.Escaped;
-        GUI.Label(new Rect(W * 0.1f, H * 0.33f, W * 0.8f, H * 0.14f), sub, subStyle);
+            ? "A lonely alien crash-lands on Earth.\nBrainwash the people before they escape!"
+            : GameResult.Reason + "\nFriends " + GameResult.Friends + "/" + GameResult.Needed + "   Escaped " + GameResult.Escaped;
+        Hud.Text(new Rect(0, H * 0.34f, W, H * 0.12f), sub, 16, Color.white);
 
-        float bw = Mathf.Max(220, W * 0.22f), bh = Mathf.Max(48, H * 0.08f);
+        float bw = 260f * k, bh = 56f * k;
         float bx = (W - bw) / 2f, by = H * 0.52f;
-        if (GUI.Button(new Rect(bx, by, bw, bh), start ? "START" : "TRY AGAIN", buttonStyle)) Play();
-        if (GUI.Button(new Rect(bx, by + bh * 1.3f, bw, bh), start ? "QUIT" : "MAIN MENU", buttonStyle)) Back();
+        if (Hud.Button(new Rect(bx, by, bw, bh), start ? "Start" : "Try again", 20)) Play();
+        if (Hud.Button(new Rect(bx, by + bh + 18f * k, bw, bh), start ? "Quit" : "Main menu", 20)) Back();
 
         bool blink = Mathf.Repeat(Time.unscaledTime, 1.2f) < 0.8f;
         if (blink)
-            GUI.Label(new Rect(0, H * 0.78f, W, 30), start ? "Press ENTER to start" : "Press ENTER to try again", smallStyle);
+            Hud.Text(new Rect(0, H * 0.79f, W, 24f * k), start ? "Press Enter to start" : "Press Enter to try again", 14, new Color(1f, 1f, 1f, 0.85f));
         if (start)
-            GUI.Label(new Rect(0, H * 0.86f, W, 30), "WASD: move     SPACE: befriend     M: mini map", smallStyle);
-    }
-
-    static void Shadow(Rect r, string text, GUIStyle style, Color color)
-    {
-        Color old = style.normal.textColor;
-        style.normal.textColor = new Color(0f, 0f, 0f, 0.8f);
-        GUI.Label(new Rect(r.x + 4, r.y + 4, r.width, r.height), text, style);
-        style.normal.textColor = color;
-        GUI.Label(r, text, style);
-        style.normal.textColor = old;
+            Hud.Text(new Rect(0, H * 0.87f, W, 24f * k), "WASD move   H beam   M map   R restart", 13, new Color(1f, 1f, 1f, 0.7f));
     }
 }
 
 // Score from the last game, shown on the game over screen.
 public static class GameResult
 {
+    public static string Reason = "Too many people escaped!";
     public static int Friends;
     public static int Escaped;
     public static int Needed = 10;

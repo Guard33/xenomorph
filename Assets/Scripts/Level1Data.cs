@@ -72,8 +72,8 @@ public static class Level1Data
         public Obj(string s, int x, int y, int w, int h, string k) { sprite = s; this.x = x; this.y = y; this.w = w; this.h = h; kind = k; }
     }
     public struct Civ {
-        public string sprite; public int x, y;
-        public Civ(string s, int x, int y) { sprite = s; this.x = x; this.y = y; }
+        public string sprite; public int x, y; public bool lookout;   // lookout = raises the alarm instead of running
+        public Civ(string s, int x, int y, bool lookout = false) { sprite = s; this.x = x; this.y = y; this.lookout = lookout; }
     }
 
     public static readonly Obj[] Objects = {
@@ -101,8 +101,6 @@ public static class Level1Data
         new Obj("house7", 15, 19, 2, 3, "building"),
         new Obj("house8", 11, 19, 2, 3, "building"),
         new Obj("ufo", 4, 4, 2, 2, "ufo"),
-        new Obj("sign", 8, 7, 1, 1, "sign"),
-        new Obj("sign", 12, 11, 1, 1, "sign"),
         new Obj("tree1", 37, 0, 1, 1, "tree"),
         new Obj("tree3", 38, 0, 1, 1, "tree"),
         new Obj("tree1", 39, 0, 1, 1, "tree"),
@@ -265,7 +263,7 @@ public static class Level1Data
         new Civ("folk_farmer", 19, 6),
         new Civ("folk_fisherman", 14, 8),
         new Civ("folk_innkeeper", 18, 10),
-        new Civ("folk_mayor", 21, 10),
+        new Civ("folk_mayor", 21, 10, true),
         new Civ("folk_grandpa", 18, 13),
         new Civ("folk_grandma", 21, 13),
         new Civ("folk_merchant", 7, 10),
@@ -277,7 +275,7 @@ public static class Level1Data
         new Civ("folk_bartender", 28, 14),
         new Civ("folk_painter", 24, 17),
         new Civ("folk_herbalist", 28, 19),
-        new Civ("folk_town-crier", 13, 18),
+        new Civ("folk_town-crier", 13, 18, true),
         new Civ("folk_lamplighter", 17, 22)
     };
 
