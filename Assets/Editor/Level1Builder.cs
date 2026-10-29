@@ -11,6 +11,7 @@ public static class Level1Builder
 {
     const string ArtFolder = "Assets/Art";
     const string PieceFolder = "Assets/Art/Level1Pieces";
+    const string AlienFolder = "Assets/Art/Alien";
     const string TileFolder = "Assets/Tiles/Level1";
     const string TemplateScene = "Assets/Scenes/SampleScene.unity";
     const string ScenePath = "Assets/Scenes/Level1.unity";
@@ -38,6 +39,7 @@ public static class Level1Builder
             foreach (string guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (path.StartsWith(ArtFolder + "/Screens")) continue;   // menu backgrounds have their own settings
                 TextureImporter ti = AssetImporter.GetAtPath(path) as TextureImporter;
                 if (ti == null) continue;
 
@@ -126,18 +128,13 @@ public static class Level1Builder
     // ------------------------------------------------------------------ scene
     static void BuildScene(Dictionary<string, TileBase> tiles)
     {
-        if (AssetDatabase.LoadAssetAtPath<SceneAsset>(ScenePath) != null)
-            AssetDatabase.DeleteAsset(ScenePath);
-        if (AssetDatabase.LoadAssetAtPath<SceneAsset>(TemplateScene) != null)
-        {
-            AssetDatabase.CopyAsset(TemplateScene, ScenePath);
-            EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-        }
-        else
-        {
-            var newScene = EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
-            EditorSceneManager.SaveScene(newScene, ScenePath);
-        }
+        // Start from the template and save over Level1.unity. Saving over the file (instead of
+        // deleting it) keeps the scene's ID, so Build Settings and other references stay valid.
+        var newScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(TemplateScene) != null
+            ? EditorSceneManager.OpenScene(TemplateScene, OpenSceneMode.Single)
+            : EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
+        EditorSceneManager.SaveScene(newScene, ScenePath);
+        EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
 
         int W = Level1Data.Width, H = Level1Data.Height;
 
@@ -168,11 +165,10 @@ public static class Level1Builder
             return t;
         }
 
-        int signCount = 0;
         foreach (Level1Data.Obj o in Level1Data.Objects)
         {
             string groupName = o.kind == "building" ? "Buildings" : o.kind == "field" ? "Fields" : o.kind == "tree" ? "Trees"
-                             : o.kind == "deco" ? "Decorations" : o.kind == "sign" ? "Tutorial Signs" : "UFO";
+                             : o.kind == "deco" ? "Decorations" : "UFO";
             GameObject go = new GameObject(o.sprite, typeof(SpriteRenderer));
             go.transform.SetParent(Group(groupName));
             float bottom = H - (o.y + o.h);
@@ -201,14 +197,6 @@ public static class Level1Builder
                 c.offset = new Vector2(0.5f, 0.35f);
                 c.radius = 0.28f;
             }
-            else if (o.kind == "sign")
-            {
-                TutorialSign sign = go.AddComponent<TutorialSign>();
-                sign.message = signCount == 0
-                    ? "Welcome to Earth!\nUse WASD or the arrow keys to move."
-                    : "Walk up to a person and press SPACE to befriend them.\nBefriend 10 people before they run to an exit!";
-                signCount++;
-            }
             else if (o.kind == "ufo")
             {
                 go.name = "UFO (start)";
@@ -227,10 +215,16 @@ public static class Level1Builder
         MakeWall(edges, "Bottom", new Vector2(W / 2f, -0.5f), new Vector2(W + 2f, 1f));
         MakeWall(edges, "Top", new Vector2(W / 2f, H + 0.5f), new Vector2(W + 2f, 1f));
 
-        // --- the alien (placeholder sprite)
+        // --- the alien (green slime, 2-frame idle bounce)
         GameObject alien = new GameObject("Alien (player)", typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(CircleCollider2D));
         alien.transform.position = RoadNetwork.TileCenter(Level1Data.Start);
-        alien.GetComponent<SpriteRenderer>().sprite = Piece("alien_placeholder");
+        Sprite[] alienFrames =
+        {
+            AssetDatabase.LoadAssetAtPath<Sprite>(AlienFolder + "/alien_idle_0.png"),
+            AssetDatabase.LoadAssetAtPath<Sprite>(AlienFolder + "/alien_idle_1.png"),
+        };
+        alien.GetComponent<SpriteRenderer>().sprite = alienFrames[0];
+        alien.AddComponent<SpriteFlipbook>().frames = alienFrames;
         Rigidbody2D rb = alien.GetComponent<Rigidbody2D>();
         rb.gravityScale = 0f;
         rb.freezeRotation = true;
@@ -248,17 +242,24 @@ public static class Level1Builder
         int i = 1;
         foreach (Level1Data.Civ c in Level1Data.Civilians)
         {
-            GameObject civ = new GameObject("Civilian " + i++ + " (" + c.sprite.Substring(5) + ")", typeof(SpriteRenderer));
+            string label = c.lookout ? "Lookout " : "Civilian ";
+            GameObject civ = new GameObject(label + i++ + " (" + c.sprite.Substring(5) + ")", typeof(SpriteRenderer));
             civ.transform.SetParent(people);
             civ.transform.position = RoadNetwork.TileCenter(new Vector2Int(c.x, c.y));
             civ.GetComponent<SpriteRenderer>().sprite = Piece(c.sprite);
             Civilian script = civ.AddComponent<Civilian>();
             script.heartSprite = heart;
+            if (c.lookout)
+            {
+                script.holdsPosition = true;
+                civ.AddComponent<TownLookout>();
+            }
             civ.AddComponent<SortByY>();
         }
 
-        // --- level manager (score + friendship meter)
+        // --- level manager (score + friendship meter), tutorial, mini map
         new GameObject("Level Manager").AddComponent<LevelManager>();
+        new GameObject("Tutorial Guide").AddComponent<TutorialGuide>();
         new GameObject("Mini Map").AddComponent<MiniMap>();
 
         // --- camera
@@ -280,11 +281,13 @@ public static class Level1Builder
         EditorSceneManager.MarkSceneDirty(scene);
         EditorSceneManager.SaveScene(scene, ScenePath);
 
-        // Level 1 is the first scene in the build
-        List<EditorBuildSettingsScene> list = new List<EditorBuildSettingsScene> { new EditorBuildSettingsScene(ScenePath, true) };
-        foreach (EditorBuildSettingsScene s in EditorBuildSettings.scenes)
-            if (s.path != ScenePath) list.Add(s);
-        EditorBuildSettings.scenes = list.ToArray();
+        // Make sure Level 1 is in the build (keeps the Start screen first if it is already there)
+        List<EditorBuildSettingsScene> list = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+        if (!list.Exists(s => s.path == ScenePath))
+        {
+            list.Add(new EditorBuildSettingsScene(ScenePath, true));
+            EditorBuildSettings.scenes = list.ToArray();
+        }
 
         Selection.activeGameObject = alien;
         SceneView.lastActiveSceneView?.FrameSelected();

@@ -60,7 +60,7 @@ public class MenuScreen : MonoBehaviour
 
         string sub = start
             ? "A lonely alien crash-lands on Earth.\nCatch the people before they escape!"
-            : "Too many people escaped!\nFriends: " + GameResult.Friends + " / " + GameResult.Needed + "      Escaped: " + GameResult.Escaped;
+            : GameResult.Reason + "\nFriends: " + GameResult.Friends + " / " + GameResult.Needed + "      Escaped: " + GameResult.Escaped;
         GUI.Label(new Rect(W * 0.1f, H * 0.33f, W * 0.8f, H * 0.14f), sub, subStyle);
 
         float bw = Mathf.Max(220, W * 0.22f), bh = Mathf.Max(48, H * 0.08f);
@@ -72,7 +72,7 @@ public class MenuScreen : MonoBehaviour
         if (blink)
             GUI.Label(new Rect(0, H * 0.78f, W, 30), start ? "Press ENTER to start" : "Press ENTER to try again", smallStyle);
         if (start)
-            GUI.Label(new Rect(0, H * 0.86f, W, 30), "WASD: move     SPACE: befriend     M: mini map", smallStyle);
+            GUI.Label(new Rect(0, H * 0.86f, W, 30), "WASD: move     H: Small Beam     M: mini map     R: restart", smallStyle);
     }
 
     static void Shadow(Rect r, string text, GUIStyle style, Color color)
@@ -89,6 +89,7 @@ public class MenuScreen : MonoBehaviour
 // Score from the last game, shown on the game over screen.
 public static class GameResult
 {
+    public static string Reason = "Too many people escaped!";
     public static int Friends;
     public static int Escaped;
     public static int Needed = 10;
