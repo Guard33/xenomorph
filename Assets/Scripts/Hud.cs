@@ -13,6 +13,9 @@ public static class Hud
         PixelFont.Draw(r, text, PixelFont.PixelSize(size), color, anchor);
     }
 
+    // Width of one line of text at a font size, in screen pixels
+    public static float TextWidth(string text, int size) => PixelFont.LineWidth(text, PixelFont.PixelSize(size));
+
     public static void Fill(Rect r, Color c)
     {
         if (Event.current.type != EventType.Repaint) return;

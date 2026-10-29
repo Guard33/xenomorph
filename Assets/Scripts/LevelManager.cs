@@ -159,7 +159,9 @@ public class LevelManager : MonoBehaviour
         float W = Screen.width, H = Screen.height;
 
         // Top-left: friends and escaped
-        Hud.Text(new Rect(14f * k, 12f * k, 400f * k, 20f * k), "Friends " + friends + "/" + friendsNeeded, 15, Color.white, TextAnchor.MiddleLeft);
+        // Before the meter is full the goal is 10; after that it's the whole town
+        int goal = won ? totalPeople : friendsNeeded;
+        Hud.Text(new Rect(14f * k, 12f * k, 400f * k, 20f * k), "Friends " + friends + "/" + goal, 15, Color.white, TextAnchor.MiddleLeft);
         Hud.Text(new Rect(14f * k, 36f * k, 400f * k, 20f * k), "Escaped " + escaped, 15, escaped > 0 ? new Color(1f, 0.6f, 0.55f) : new Color(1f, 1f, 1f, 0.75f), TextAnchor.MiddleLeft);
 
         // HP under the score, only when it matters
@@ -170,7 +172,7 @@ public class LevelManager : MonoBehaviour
         // Bottom-left: friendship meter (pixel bar)
         float bw = 70 * u, bh = 4 * u;
         float bx = Mathf.Round(14f * k), by = Mathf.Round(H - 16f * k - bh);
-        Hud.Text(new Rect(bx, by - 26f * k, 400f * k, 20f * k), "Friendship " + Exp + "/" + ExpNeeded, 13, Color.white, TextAnchor.MiddleLeft);
+        Hud.Text(new Rect(bx, by - 26f * k, 400f * k, 20f * k), "Friendship " + Mathf.Min(Exp, ExpNeeded) + "/" + ExpNeeded, 13, Color.white, TextAnchor.MiddleLeft);
         Hud.Panel(new Rect(bx, by, bw, bh), new Color(0.12f, 0.1f, 0.14f, 0.8f));
         float fill = (bw - 2 * u) * Mathf.Clamp01((float)Exp / ExpNeeded);
         Hud.Fill(new Rect(bx + u, by + u, Mathf.Round(fill / u) * u, bh - 2 * u), Pink);
@@ -197,14 +199,17 @@ public class LevelManager : MonoBehaviour
     // the player can keep brainwashing the rest of the town afterwards.
     void DrawWinPopup(float k)
     {
-        float w = 330f * k, h = 112f * k;
+        const string title = "Meter full!", line1 = "Ready to evolve", line2 = "Level 2 coming soon";
+        float pad = 18f * k, closeW = 34f * k;
+        // Size the card to its text so nothing spills out
+        float textW = Mathf.Max(Hud.TextWidth(title, 20) + closeW, Mathf.Max(Hud.TextWidth(line1, 14), Hud.TextWidth(line2, 14)));
+        float w = textW + 2f * pad, h = 112f * k;
         Rect r = new Rect(Screen.width - w - 14f * k, Screen.height * 0.36f, w, h);
         Hud.Panel(r, PanelColor);
 
-        float pad = 18f * k;
-        Hud.Text(new Rect(r.x + pad, r.y + 14f * k, w, 24f * k), "Meter full!", 20, Pink, TextAnchor.MiddleLeft);
-        Hud.Text(new Rect(r.x + pad, r.y + 48f * k, w, 18f * k), "You're ready to evolve.", 14, Color.white, TextAnchor.MiddleLeft);
-        Hud.Text(new Rect(r.x + pad, r.y + 72f * k, w, 18f * k), "Level 2 coming soon", 14, new Color(1f, 1f, 1f, 0.6f), TextAnchor.MiddleLeft);
+        Hud.Text(new Rect(r.x + pad, r.y + 14f * k, w, 24f * k), title, 20, Pink, TextAnchor.MiddleLeft);
+        Hud.Text(new Rect(r.x + pad, r.y + 48f * k, w, 18f * k), line1, 14, Color.white, TextAnchor.MiddleLeft);
+        Hud.Text(new Rect(r.x + pad, r.y + 72f * k, w, 18f * k), line2, 14, new Color(1f, 1f, 1f, 0.6f), TextAnchor.MiddleLeft);
 
         Rect x = new Rect(r.xMax - 34f * k, r.y + 10f * k, 24f * k, 24f * k);
         Hud.Text(x, "X", 15, Hud.Hover(x) ? Color.white : new Color(1f, 1f, 1f, 0.5f));

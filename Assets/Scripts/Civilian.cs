@@ -87,9 +87,34 @@ public class Civilian : MonoBehaviour
         MoveTowards(target, walkSpeed);
         if (Vector2.Distance(transform.position, target) < 0.05f)
         {
-            target = home + Random.insideUnitCircle * wanderRadius;
+            target = PickWanderSpot();
             waitTimer = Random.Range(1f, 3f);
         }
+    }
+
+    // A spot near home on land (not water, buildings or trees), reachable in a straight line
+    Vector2 PickWanderSpot()
+    {
+        Vector2 here = transform.position;
+        for (int i = 0; i < 8; i++)
+        {
+            Vector2 p = home + Random.insideUnitCircle * wanderRadius;
+            if (ClearLine(here, p)) return p;
+        }
+        return home;
+    }
+
+    // Every tile under the straight line (plus a small margin) is open ground,
+    // so people never cut the corner of a house or step to the edge of the water
+    static bool ClearLine(Vector2 a, Vector2 b)
+    {
+        const float margin = 0.2f;
+        Vector2 min = Vector2.Min(a, b) - Vector2.one * margin;
+        Vector2 max = Vector2.Max(a, b) + Vector2.one * margin;
+        for (int x = Mathf.FloorToInt(min.x); x <= Mathf.FloorToInt(max.x); x++)
+            for (int y = Mathf.FloorToInt(min.y); y <= Mathf.FloorToInt(max.y); y++)
+                if (!RoadNetwork.Walkable(new Vector2(x + 0.5f, y + 0.5f))) return false;
+        return true;
     }
 
     void Run()
