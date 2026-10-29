@@ -253,7 +253,68 @@ public static class Level1Data
         new Obj("flowers2", 27, 10, 1, 1, "deco"),
         new Obj("flowers2", 12, 16, 1, 1, "deco"),
         new Obj("flowers", 17, 16, 1, 1, "deco"),
-        new Obj("bush", 29, 18, 1, 1, "deco")
+        new Obj("bush", 29, 18, 1, 1, "deco"),
+
+        // --- More life (2026-10-28). Each group has a reason to be where it is.
+        // Riverbank: trees grow along the west bank (water keeps the ground green)
+        new Obj("tree2", 29, 4, 1, 1, "tree"),
+        new Obj("tree1", 29, 7, 1, 1, "tree"),
+        new Obj("tree4", 29, 14, 1, 1, "tree"),
+        new Obj("tree2", 29, 16, 1, 1, "tree"),
+        new Obj("tree1", 29, 21, 1, 1, "tree"),
+        new Obj("bush", 29, 10, 1, 1, "deco"),
+        new Obj("bush", 29, 20, 1, 1, "deco"),
+        // Hedgerow along the bottom of the corn fields, with a gap by the UFO to walk through
+        new Obj("bush", 1, 7, 1, 1, "deco"),
+        new Obj("bush", 2, 7, 1, 1, "deco"),
+        new Obj("bush", 3, 7, 1, 1, "deco"),
+        new Obj("bush", 7, 7, 1, 1, "deco"),
+        new Obj("bush", 8, 7, 1, 1, "deco"),
+        new Obj("bush", 9, 7, 1, 1, "deco"),
+        // Pond: reeds and bushes on the banks, a shade tree on each side
+        new Obj("tree3", 2, 17, 1, 1, "tree"),
+        new Obj("tree4", 8, 20, 1, 1, "tree"),
+        new Obj("bush", 3, 21, 1, 1, "deco"),
+        new Obj("bush", 6, 21, 1, 1, "deco"),
+        new Obj("flowers2", 8, 17, 1, 1, "deco"),
+        new Obj("flowers", 2, 19, 1, 1, "deco"),
+        // Front gardens: a flower bed by every house, a tree in some back yards
+        new Obj("flowers2", 10, 10, 1, 1, "deco"),
+        new Obj("flowers", 12, 14, 1, 1, "deco"),
+        new Obj("bush", 15, 13, 1, 1, "deco"),
+        new Obj("flowers", 26, 16, 1, 1, "deco"),
+        new Obj("flowers2", 24, 15, 1, 1, "deco"),
+        new Obj("flowers", 28, 17, 1, 1, "deco"),
+        new Obj("flowers2", 17, 21, 1, 1, "deco"),
+        new Obj("flowers", 10, 21, 1, 1, "deco"),
+        new Obj("tree1", 8, 15, 1, 1, "tree"),
+        new Obj("tree3", 13, 21, 1, 1, "tree"),
+        // Town square: flower beds and a shade tree by the church
+        new Obj("flowers2", 22, 8, 1, 1, "deco"),
+        new Obj("tree2", 15, 9, 1, 1, "tree"),
+        // Allotment garden and a small orchard for the southern houses
+        new Obj("crops_green", 20, 19, 3, 3, "field"),
+        new Obj("orchard", 24, 19, 3, 3, "field"),
+        // Wildflower meadow between the farm and the river
+        new Obj("flowers", 26, 8, 1, 1, "deco"),
+        new Obj("flowers2", 28, 7, 1, 1, "deco"),
+        new Obj("flowers", 25, 10, 1, 1, "deco"),
+        new Obj("bush", 27, 11, 1, 1, "deco"),
+        new Obj("tree4", 24, 7, 1, 1, "tree"),
+        // Trees lining the road out of town past the bridge
+        new Obj("tree1", 35, 11, 1, 1, "tree"),
+        new Obj("tree3", 37, 11, 1, 1, "tree"),
+        new Obj("tree2", 34, 13, 1, 1, "tree"),
+        new Obj("tree4", 36, 13, 1, 1, "tree"),
+        // West grove and thicker forest edges in the south
+        new Obj("tree4", 1, 13, 1, 1, "tree"),
+        new Obj("tree1", 3, 10, 1, 1, "tree"),
+        new Obj("bush", 4, 12, 1, 1, "deco"),
+        new Obj("tree2", 3, 23, 1, 1, "tree"),
+        new Obj("tree3", 6, 23, 1, 1, "tree"),
+        new Obj("tree1", 12, 23, 1, 1, "tree"),
+        new Obj("tree4", 27, 23, 1, 1, "tree"),
+        new Obj("tree2", 29, 23, 1, 1, "tree")
     };
 
     public static readonly Civ[] Civilians = {
@@ -282,9 +343,4 @@ public static class Level1Data
     public static readonly Vector2Int Start = new Vector2Int(5, 6);
     public static readonly Vector2Int ExitA = new Vector2Int(39, 12);
     public static readonly Vector2Int ExitB = new Vector2Int(14, 25);
-
-    // Road network that scared civilians use to run to the closest exit
-    public static readonly Vector2Int[] RoadNodes = { new Vector2Int(6, 8), new Vector2Int(6, 12), new Vector2Int(13, 12), new Vector2Int(13, 6), new Vector2Int(20, 12), new Vector2Int(25, 12), new Vector2Int(39, 12), new Vector2Int(20, 17), new Vector2Int(14, 17), new Vector2Int(14, 25), new Vector2Int(25, 18) };
-    public static readonly Vector2Int[] RoadEdges = { new Vector2Int(0, 1), new Vector2Int(1, 2), new Vector2Int(2, 3), new Vector2Int(2, 4), new Vector2Int(4, 5), new Vector2Int(5, 6), new Vector2Int(4, 7), new Vector2Int(7, 8), new Vector2Int(8, 9), new Vector2Int(5, 10) };
-    public static readonly int[] ExitNodes = { 6, 9 };
 }

@@ -1,87 +1,193 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Finds the shortest way along the roads from a point to the closest exit.
+// Where people can walk on the Level 1 map, and the way to each exit.
+// The map is a grid of tiles: water (except the bridge), buildings and trees are blocked.
+// Scared people follow the cheapest route, and roads are cheaper than grass,
+// so they run along the roads and only cross the river at the bridge.
+// They avoid an exit the alien is guarding or standing in the way of.
 public static class RoadNetwork
 {
+    const float RoadCost = 1f;
+    const float GrassCost = 3f;
+    const float GuardRadius = 3f;     // alien this close to an exit = exit is blocked
+    const float PathRadius = 1.5f;    // alien this close to the way ahead = way is blocked
+    const float IgnoreNear = 1.5f;    // the first bit of the route (right next to the person) doesn't count
+
+    static bool[,] blocked;
+    static float[][,] distToExit;     // one cost map per exit
+
+    public static readonly Vector2Int[] Exits = { Level1Data.ExitA, Level1Data.ExitB };
+
     // Centre of a map tile in world space (map rows start at the top).
     public static Vector2 TileCenter(Vector2Int tile)
     {
         return new Vector2(tile.x + 0.5f, Level1Data.Height - 1 - tile.y + 0.5f);
     }
 
-    public static List<Vector2> RouteToClosestExit(Vector2 from)
+    public static Vector2Int TileAt(Vector2 world)
     {
-        Vector2Int[] nodes = Level1Data.RoadNodes;
-        int n = nodes.Length;
-        Vector2[] pos = new Vector2[n];
-        for (int i = 0; i < n; i++) pos[i] = TileCenter(nodes[i]);
+        return new Vector2Int(Mathf.FloorToInt(world.x), Level1Data.Height - 1 - Mathf.FloorToInt(world.y));
+    }
 
-        List<int>[] links = new List<int>[n];
-        for (int i = 0; i < n; i++) links[i] = new List<int>();
-        foreach (Vector2Int e in Level1Data.RoadEdges)
+    public static bool Walkable(Vector2Int t)
+    {
+        Build();
+        return InMap(t) && !blocked[t.x, t.y];
+    }
+
+    public static bool Walkable(Vector2 world) => Walkable(TileAt(world));
+
+    static bool InMap(Vector2Int t) => t.x >= 0 && t.y >= 0 && t.x < Level1Data.Width && t.y < Level1Data.Height;
+
+    static bool IsRoad(int x, int y) => Level1Data.Paths[y][x] != '.';
+
+    static readonly Vector2Int[] Dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+
+    static void Build()
+    {
+        if (blocked != null) return;
+        int W = Level1Data.Width, H = Level1Data.Height;
+        blocked = new bool[W, H];
+
+        for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++)
+            {
+                char g = Level1Data.Ground[y][x];
+                if ((g == '~' || g == '=') && Level1Data.Paths[y][x] != '#') blocked[x, y] = true;
+            }
+
+        foreach (Level1Data.Obj o in Level1Data.Objects)
         {
-            links[e.x].Add(e.y);
-            links[e.y].Add(e.x);
+            if (o.kind != "building" && o.kind != "tree") continue;
+            for (int y = o.y; y < o.y + o.h; y++)
+                for (int x = o.x; x < o.x + o.w; x++)
+                    if (InMap(new Vector2Int(x, y))) blocked[x, y] = true;
         }
 
-        // Distance from every road point to its closest exit (Dijkstra from all exits)
-        float[] dist = new float[n];
-        int[] next = new int[n];
-        bool[] done = new bool[n];
-        for (int i = 0; i < n; i++) { dist[i] = float.MaxValue; next[i] = -1; }
-        foreach (int e in Level1Data.ExitNodes) dist[e] = 0f;
+        Vector2Int[] exits = Exits;
+        distToExit = new float[exits.Length][,];
+        for (int i = 0; i < exits.Length; i++)
+            distToExit[i] = CostMap(exits[i]);
+    }
 
-        for (int step = 0; step < n; step++)
+    // Cost to reach one exit from every tile (Dijkstra from the exit)
+    static float[,] CostMap(Vector2Int exit)
+    {
+        int W = Level1Data.Width, H = Level1Data.Height;
+        float[,] dist = new float[W, H];
+        for (int y = 0; y < H; y++)
+            for (int x = 0; x < W; x++) dist[x, y] = float.MaxValue;
+
+        var open = new List<Vector2Int> { exit };
+        dist[exit.x, exit.y] = 0f;
+        while (open.Count > 0)
         {
-            int u = -1;
-            for (int i = 0; i < n; i++)
-                if (!done[i] && (u < 0 || dist[i] < dist[u])) u = i;
-            if (u < 0 || dist[u] == float.MaxValue) break;
-            done[u] = true;
-            foreach (int v in links[u])
+            int best = 0;
+            for (int i = 1; i < open.Count; i++)
+                if (dist[open[i].x, open[i].y] < dist[open[best].x, open[best].y]) best = i;
+            Vector2Int u = open[best];
+            open.RemoveAt(best);
+            foreach (Vector2Int d in Dirs)
             {
-                float d = dist[u] + Vector2.Distance(pos[u], pos[v]);
-                if (d < dist[v]) { dist[v] = d; next[v] = u; }
+                Vector2Int v = u + d;
+                if (!InMap(v) || blocked[v.x, v.y]) continue;
+                float nd = dist[u.x, u.y] + (IsRoad(v.x, v.y) ? RoadCost : GrassCost);
+                if (nd < dist[v.x, v.y])
+                {
+                    if (dist[v.x, v.y] == float.MaxValue) open.Add(v);
+                    dist[v.x, v.y] = nd;
+                }
             }
         }
+        return dist;
+    }
 
-        // Find the best place to join a road: run to the nearest road first,
-        // then take the direction along that road that reaches an exit soonest
-        float bestTrip = float.MaxValue;
-        Vector2 join = from;
-        int start = 0;
-        foreach (Vector2Int e in Level1Data.RoadEdges)
+    // Route from a point to one exit, then a little way off the map
+    public static List<Vector2> RouteToExit(Vector2 from, int exit)
+    {
+        Build();
+        float[,] dist = distToExit[exit];
+        List<Vector2> route = new List<Vector2>();
+        Vector2Int t = NearestWalkable(TileAt(from));
+
+        // Walk downhill on the cost map until we reach the exit
+        int guard = Level1Data.Width * Level1Data.Height;
+        while (dist[t.x, t.y] > 0f && guard-- > 0)
         {
-            Vector2 a = pos[e.x], b = pos[e.y];
-            Vector2 ab = b - a;
-            float t = ab.sqrMagnitude > 0f ? Mathf.Clamp01(Vector2.Dot(from - a, ab) / ab.sqrMagnitude) : 0f;
-            Vector2 p = a + ab * t;
-            float toRoad = Vector2.Distance(from, p) * 3f;   // cutting across the grass is avoided
-            float viaA = toRoad + Vector2.Distance(p, a) + dist[e.x];
-            float viaB = toRoad + Vector2.Distance(p, b) + dist[e.y];
-            if (viaA < bestTrip) { bestTrip = viaA; join = p; start = e.x; }
-            if (viaB < bestTrip) { bestTrip = viaB; join = p; start = e.y; }
+            route.Add(TileCenter(t));
+            Vector2Int next = t;
+            foreach (Vector2Int d in Dirs)
+            {
+                Vector2Int v = t + d;
+                if (InMap(v) && dist[v.x, v.y] < dist[next.x, next.y]) next = v;
+            }
+            if (next == t) break;   // can't reach this exit
+            t = next;
         }
+        route.Add(TileCenter(t));
 
-        List<Vector2> route = new List<Vector2> { join };
-        int node = start;
-        int last = start;
-        while (node >= 0)
-        {
-            route.Add(pos[node]);
-            last = node;
-            node = next[node];
-        }
-
-        // Keep running off the map through the exit
-        Vector2Int exitTile = nodes[last];
         Vector2 outward = Vector2.zero;
-        if (exitTile.x >= Level1Data.Width - 1) outward = Vector2.right;
-        else if (exitTile.x <= 0) outward = Vector2.left;
-        else if (exitTile.y >= Level1Data.Height - 1) outward = Vector2.down;
-        else if (exitTile.y <= 0) outward = Vector2.up;
-        route.Add(pos[last] + outward * 1.5f);
+        if (t.x >= Level1Data.Width - 1) outward = Vector2.right;
+        else if (t.x <= 0) outward = Vector2.left;
+        else if (t.y >= Level1Data.Height - 1) outward = Vector2.down;
+        else if (t.y <= 0) outward = Vector2.up;
+        route.Add(TileCenter(t) + outward * 1.5f);
         return route;
+    }
+
+    // Is the alien guarding this exit, or standing on the way there?
+    public static bool IsBlocked(List<Vector2> route, int exit, Vector2 from, Vector2 alien)
+    {
+        if (Vector2.Distance(alien, TileCenter(Exits[exit])) < GuardRadius) return true;
+        foreach (Vector2 p in route)
+            if (Vector2.Distance(p, from) > IgnoreNear && Vector2.Distance(p, alien) < PathRadius) return true;
+        return false;
+    }
+
+    // How close the route gets to the alien (bigger = safer)
+    static float Clearance(List<Vector2> route, Vector2 from, Vector2 alien)
+    {
+        float min = float.MaxValue;
+        foreach (Vector2 p in route)
+            if (Vector2.Distance(p, from) > IgnoreNear) min = Mathf.Min(min, Vector2.Distance(p, alien));
+        return min;
+    }
+
+    // Pick the cheapest exit the alien isn't blocking. If the alien blocks every exit,
+    // take the one whose route keeps furthest from it.
+    public static int ChooseExit(Vector2 from, Vector2 alien, out List<Vector2> route)
+    {
+        Build();
+        Vector2Int start = NearestWalkable(TileAt(from));
+        int best = -1, safest = 0;
+        float bestCost = float.MaxValue, bestClear = -1f;
+        route = null;
+        List<Vector2> safestRoute = null;
+        for (int i = 0; i < Exits.Length; i++)
+        {
+            float cost = distToExit[i][start.x, start.y];
+            if (cost == float.MaxValue) continue;
+            List<Vector2> r = RouteToExit(from, i);
+            if (!IsBlocked(r, i, from, alien) && cost < bestCost) { best = i; bestCost = cost; route = r; }
+            float clear = Mathf.Min(Clearance(r, from, alien), Vector2.Distance(alien, TileCenter(Exits[i])));
+            if (clear > bestClear) { safest = i; bestClear = clear; safestRoute = r; }
+        }
+        if (best >= 0) return best;
+        route = safestRoute ?? RouteToExit(from, 0);
+        return safest;
+    }
+
+    static Vector2Int NearestWalkable(Vector2Int t)
+    {
+        if (Walkable(t)) return t;
+        for (int r = 1; r < 6; r++)
+            for (int dy = -r; dy <= r; dy++)
+                for (int dx = -r; dx <= r; dx++)
+                {
+                    Vector2Int v = new Vector2Int(t.x + dx, t.y + dy);
+                    if (Walkable(v)) return v;
+                }
+        return t;
     }
 }

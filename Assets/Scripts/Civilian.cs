@@ -4,6 +4,8 @@ using UnityEngine;
 
 // A civilian walks around near home. When the alien comes close, the civilian
 // gets scared, runs faster and follows the roads to the closest exit.
+// If the alien is guarding that exit or standing in the way, they run for the other one,
+// and they keep checking while they run.
 public class Civilian : MonoBehaviour
 {
     public static readonly List<Civilian> All = new List<Civilian>();
@@ -16,6 +18,9 @@ public class Civilian : MonoBehaviour
     public bool holdsPosition;         // lookouts stay put and raise the alarm instead of running
 
     public bool IsAlerted => alerted;
+    public int TargetExit => exit;     // index into RoadNetwork.Exits
+
+    const float RecheckEvery = 0.3f;   // seconds between "is the way still clear?" checks
 
     private Vector2 home;
     private Vector2 target;
@@ -23,6 +28,8 @@ public class Civilian : MonoBehaviour
     private bool alerted;
     private bool gone;
     private readonly List<Vector2> route = new List<Vector2>();
+    private int exit = -1;
+    private float recheck;
     private Transform alien;
     private SpriteRenderer sr;
 
@@ -53,13 +60,31 @@ public class Civilian : MonoBehaviour
         else Wander();
     }
 
-    // Scared: run along the roads to the closest exit
+    // Scared: run along the roads to the closest exit the alien isn't blocking
     public void Alert()
     {
         if (alerted || gone || holdsPosition) return;
         alerted = true;
+        PickRoute();
+    }
+
+    void PickRoute()
+    {
+        Vector2 alienPos = alien != null ? (Vector2)alien.position : new Vector2(-100f, -100f);
+        exit = RoadNetwork.ChooseExit(transform.position, alienPos, out List<Vector2> r);
         route.Clear();
-        route.AddRange(RoadNetwork.RouteToClosestExit(transform.position));
+        route.AddRange(r);
+        recheck = RecheckEvery;
+    }
+
+    // While running: if the alien now blocks our exit, switch to a clear one
+    void RecheckRoute()
+    {
+        recheck -= Time.deltaTime;
+        if (recheck > 0f || alien == null || exit < 0) return;
+        recheck = RecheckEvery;
+        if (RoadNetwork.IsBlocked(route, exit, transform.position, alien.position))
+            PickRoute();
     }
 
     // Everyone within radius of a point gets scared (used by the lookouts' alarm)
@@ -87,9 +112,34 @@ public class Civilian : MonoBehaviour
         MoveTowards(target, walkSpeed);
         if (Vector2.Distance(transform.position, target) < 0.05f)
         {
-            target = home + Random.insideUnitCircle * wanderRadius;
+            target = PickWanderSpot();
             waitTimer = Random.Range(1f, 3f);
         }
+    }
+
+    // A spot near home on land (not water, buildings or trees), reachable in a straight line
+    Vector2 PickWanderSpot()
+    {
+        Vector2 here = transform.position;
+        for (int i = 0; i < 8; i++)
+        {
+            Vector2 p = home + Random.insideUnitCircle * wanderRadius;
+            if (ClearLine(here, p)) return p;
+        }
+        return home;
+    }
+
+    // Every tile under the straight line (plus a small margin) is open ground,
+    // so people never cut the corner of a house or step to the edge of the water
+    static bool ClearLine(Vector2 a, Vector2 b)
+    {
+        const float margin = 0.2f;
+        Vector2 min = Vector2.Min(a, b) - Vector2.one * margin;
+        Vector2 max = Vector2.Max(a, b) + Vector2.one * margin;
+        for (int x = Mathf.FloorToInt(min.x); x <= Mathf.FloorToInt(max.x); x++)
+            for (int y = Mathf.FloorToInt(min.y); y <= Mathf.FloorToInt(max.y); y++)
+                if (!RoadNetwork.Walkable(new Vector2(x + 0.5f, y + 0.5f))) return false;
+        return true;
     }
 
     void Run()
@@ -99,6 +149,7 @@ public class Civilian : MonoBehaviour
             Escape();
             return;
         }
+        RecheckRoute();
         MoveTowards(route[0], runSpeed);
         if (Vector2.Distance(transform.position, route[0]) < 0.05f)
             route.RemoveAt(0);
