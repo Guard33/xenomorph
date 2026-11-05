@@ -10,3 +10,11 @@ Art/Level1Pieces:
   Pieces cut out of the two packs above for Level 1.
   sign, bridge, exit_marker and heart are small extra sprites made for this level.
   alien_placeholder is a darkened Town Folk villager, used until our alien sprite is ready.
+
+Art/Military:
+  Military base sprites (buildings, vehicles, yard tiles, fences) for Level 2,
+  cut from one sheet (military.png). Source/author: TO CONFIRM before release.
+  It matches the Tiny Tile Town style, so check whether it comes from that pack.
+
+Art/Alien:
+  alien_idle_0/1 - green slime alien (2-frame idle bounce). Author: TO CONFIRM.
