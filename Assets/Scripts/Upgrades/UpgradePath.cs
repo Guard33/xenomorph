@@ -1,6 +1,6 @@
-// The alien's upgrade path (Danesh).
+// The alien's upgrade path (Danesh; J tier changed by Hemanth).
 // The alien starts with the Small Beam on H. At the end of each level it evolves
-// and picks ONE of two new skills. Evolutions unlock the J, K and L skill keys.
+// and picks ONE new skill. Evolutions unlock the J, K and L skill keys.
 //   Brain path (pink): catch more people at once.
 //   Sneak path (blue): control the crowd and stay hidden.
 // The player can mix paths, so every playthrough can be different.
@@ -23,8 +23,8 @@ public static class UpgradePath
         public string key;        // skill key this evolution unlocks
         public string nextLevel;  // the level where the new skill is first used
         public string threat;     // what that level adds
-        public Option a;          // Brain path choice
-        public Option b;          // Sneak path choice
+        public string scene;      // scene to load after picking (null = not built yet)
+        public Option[] options;  // the skills to choose from
     }
 
     public static readonly Option Start = new Option
@@ -36,25 +36,35 @@ public static class UpgradePath
     {
         new Tier
         {
-            stage = 2, key = "J", nextLevel = "Level 2: Suburbs", threat = "Panic spreads",
-            a = new Option { id = "wide_wave", name = "Wide Wave", line1 = "Wave spreads", line2 = "hits 3 people", icon = "wide_wave", brainPath = true },
-            b = new Option { id = "calm_hum", name = "Calm Hum", line1 = "People near you", line2 = "stop panicking", icon = "calm_hum", brainPath = false },
+            stage = 2, key = "J", nextLevel = "Level 2: Fort Maple", threat = "Police patrols", scene = "Level2",
+            options = new[]
+            {
+                new Option { id = "spread_beam", name = "Shotgun Beam", line1 = "5 beams in a", line2 = "wide spread", icon = "wide_wave", brainPath = true },
+                new Option { id = "friend_trap", name = "Friend Trap", line1 = "Befriends all", line2 = "who walk near", icon = "friend_trap", brainPath = false },
+                new Option { id = "pierce_beam", name = "Piercing Beam", line1 = "Long beam that", line2 = "hits everyone", icon = "long_beam", brainPath = true },
+            },
         },
         new Tier
         {
-            stage = 3, key = "K", nextLevel = "Level 3: Downtown", threat = "Police patrols",
-            a = new Option { id = "long_beam", name = "Long Beam", line1 = "Double range", line2 = "through people", icon = "long_beam", brainPath = true },
-            b = new Option { id = "disguise", name = "Disguise", line1 = "Look human", line2 = "for 5 seconds", icon = "disguise", brainPath = false },
+            stage = 3, key = "K", nextLevel = "Level 3: Downtown", threat = "Soldiers",
+            options = new[]
+            {
+                new Option { id = "calm_hum", name = "Calm Hum", line1 = "People near you", line2 = "stop panicking", icon = "calm_hum", brainPath = false },
+                new Option { id = "disguise", name = "Disguise", line1 = "Look human", line2 = "for 5 seconds", icon = "disguise", brainPath = false },
+            },
         },
         new Tier
         {
             stage = 4, key = "L", nextLevel = "Level 4: City Centre", threat = "Army and time limit",
-            a = new Option { id = "tractor_beam", name = "Tractor Beam", line1 = "Pull everyone", line2 = "in a big circle", icon = "tractor_beam", brainPath = true },
-            b = new Option { id = "friend_army", name = "Friend Army", line1 = "Friends return", line2 = "block an exit", icon = "friend_army", brainPath = false },
+            options = new[]
+            {
+                new Option { id = "tractor_beam", name = "Tractor Beam", line1 = "Pull everyone", line2 = "in a big circle", icon = "tractor_beam", brainPath = true },
+                new Option { id = "friend_army", name = "Friend Army", line1 = "Friends return", line2 = "block an exit", icon = "friend_army", brainPath = false },
+            },
         },
     };
 
-    // -1 = not picked yet, 0 = Brain path (a), 1 = Sneak path (b)
+    // -1 = not picked yet, otherwise the index of the picked option
     public static readonly int[] Chosen = { -1, -1, -1 };
 
     // The evolution the player picks next (Tiers.Length when the path is complete)
@@ -71,7 +81,18 @@ public static class UpgradePath
     public static Option Picked(int tier)
     {
         if (tier < 0 || tier >= Tiers.Length) return null;
-        return Chosen[tier] == 0 ? Tiers[tier].a : Chosen[tier] == 1 ? Tiers[tier].b : null;
+        int c = Chosen[tier];
+        return c >= 0 && c < Tiers[tier].options.Length ? Tiers[tier].options[c] : null;
+    }
+
+    public static string PickedId(int tier) => Picked(tier)?.id;
+
+    public static Option Find(string id)
+    {
+        foreach (Tier t in Tiers)
+            foreach (Option o in t.options)
+                if (o.id == id) return o;
+        return null;
     }
 
     public static void Reset()

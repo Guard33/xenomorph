@@ -2,9 +2,12 @@ using UnityEngine;
 
 // Level 1 is the tutorial. This shows one instruction at a time at the top of the screen
 // and moves on when the player has done it (or after a few seconds for tips).
+// Later levels get a few short hints about what's new.
 public class TutorialGuide : MonoBehaviour
 {
-    enum Step { Move, Beam, Exits, Lookouts, Goal, Done }
+    enum Step { Move, Beam, Exits, Lookouts, Goal, Done, NewSkill, Police, Goal2, Done2 }
+
+    public int level = 1;
 
     private Step step = Step.Move;
     private float stepTime;
@@ -15,6 +18,7 @@ public class TutorialGuide : MonoBehaviour
 
     void Start()
     {
+        if (level >= 2) step = Step.NewSkill;
         alien = FindFirstObjectByType<AlienPlayer>();
         lookouts = FindObjectsByType<TownLookout>(FindObjectsSortMode.None);
     }
@@ -40,6 +44,15 @@ public class TutorialGuide : MonoBehaviour
                 if (stepTime > 12f || AnyLookoutBefriended()) Next();
                 break;
             case Step.Goal:
+                if (stepTime > 5f) Next();
+                break;
+            case Step.NewSkill:
+                if (stepTime > 10f || !alien.skills[1].Ready) Next();
+                break;
+            case Step.Police:
+                if (stepTime > 7f) Next();
+                break;
+            case Step.Goal2:
                 if (stepTime > 5f) Next();
                 break;
         }
@@ -68,6 +81,9 @@ public class TutorialGuide : MonoBehaviour
             case Step.Exits: return "Scared people run for the exits";
             case Step.Lookouts: return "Yellow circle = lookout. Beam them first!";
             case Step.Goal: return "Befriend 10 people to evolve";
+            case Step.NewSkill: return "New skill! Press  J  for your " + alien.skills[1].name;
+            case Step.Police: return "Police take 3 hits and blow whistles";
+            case Step.Goal2: return "Befriend " + LevelManager.Instance.friendsNeeded + " people to evolve";
         }
         return null;
     }

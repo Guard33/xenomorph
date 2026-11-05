@@ -67,15 +67,6 @@ public static class Level1Data
         "..............5........................."
     };
 
-    public struct Obj {
-        public string sprite, kind; public int x, y, w, h;   // x, y = top-left tile
-        public Obj(string s, int x, int y, int w, int h, string k) { sprite = s; this.x = x; this.y = y; this.w = w; this.h = h; kind = k; }
-    }
-    public struct Civ {
-        public string sprite; public int x, y; public bool lookout;   // lookout = raises the alarm instead of running
-        public Civ(string s, int x, int y, bool lookout = false) { sprite = s; this.x = x; this.y = y; this.lookout = lookout; }
-    }
-
     public static readonly Obj[] Objects = {
         new Obj("corn", 1, 1, 3, 3, "field"),
         new Obj("corn", 4, 1, 3, 3, "field"),
@@ -343,4 +334,10 @@ public static class Level1Data
     public static readonly Vector2Int Start = new Vector2Int(5, 6);
     public static readonly Vector2Int ExitA = new Vector2Int(39, 12);
     public static readonly Vector2Int ExitB = new Vector2Int(14, 25);
+
+    public static readonly LevelMap Map = new LevelMap
+    {
+        Name = "Quiet Farm Town", Width = Width, Height = Height, Ground = Ground, Paths = Paths,
+        Objects = Objects, Civilians = Civilians, Start = Start, Exits = new[] { ExitA, ExitB }, FriendsNeeded = 10,
+    };
 }

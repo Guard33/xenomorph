@@ -15,7 +15,8 @@ public class Civilian : MonoBehaviour
     public float wanderRadius = 1f;
     public float alertRadius = 2.5f;
     public Sprite heartSprite;
-    public bool holdsPosition;         // lookouts stay put and raise the alarm instead of running
+    public bool holdsPosition;         // lookouts and police don't run away
+    public int toughness = 1;          // beam hits needed to befriend (police: 3)
 
     public bool IsAlerted => alerted;
     public int TargetExit => exit;     // index into RoadNetwork.Exits
@@ -30,6 +31,9 @@ public class Civilian : MonoBehaviour
     private readonly List<Vector2> route = new List<Vector2>();
     private int exit = -1;
     private float recheck;
+    private int hits;
+    private float hitFlash;
+    private SpriteRenderer[] pips;     // hit points shown above tough people
     private Transform alien;
     private SpriteRenderer sr;
 
@@ -46,11 +50,18 @@ public class Civilian : MonoBehaviour
         AlienPlayer player = FindFirstObjectByType<AlienPlayer>();
         if (player != null) alien = player.transform;
         waitTimer = Random.Range(0.5f, 2.5f);
+        if (toughness > 1) MakePips();
     }
 
     void Update()
     {
         if (gone) return;
+
+        if (hitFlash > 0f)
+        {
+            hitFlash -= Time.deltaTime;
+            if (sr != null) sr.color = hitFlash > 0f ? new Color(0.6f, 1f, 0.7f) : Color.white;
+        }
 
         if (!alerted && !holdsPosition && alien != null &&
             Vector2.Distance(alien.position, transform.position) < alertRadius)
@@ -167,6 +178,48 @@ public class Civilian : MonoBehaviour
         gone = true;
         if (LevelManager.Instance != null) LevelManager.Instance.PersonEscaped();
         Destroy(gameObject);
+    }
+
+    // A beam (or trap) hits this person. Most people are befriended at once;
+    // tough people (police) need several hits. Returns true if they are befriended.
+    public bool Hit(int damage = 1)
+    {
+        if (gone) return false;
+        hits += damage;
+        if (hits >= toughness)
+        {
+            Befriend();
+            return true;
+        }
+        hitFlash = 0.15f;
+        UpdatePips();
+        return false;
+    }
+
+    public int HitsLeft => Mathf.Max(0, toughness - hits);
+
+    void MakePips()
+    {
+        pips = new SpriteRenderer[toughness];
+        for (int i = 0; i < toughness; i++)
+        {
+            GameObject p = new GameObject("HP " + (i + 1));
+            p.transform.SetParent(transform, false);
+            p.transform.localPosition = new Vector3((i - (toughness - 1) / 2f) * 0.22f - 0.08f, 0.7f, 0f);
+            p.transform.localScale = new Vector3(0.16f, 0.16f, 1f);
+            SpriteRenderer s = p.AddComponent<SpriteRenderer>();
+            s.sprite = BeamEffect.Pixel;
+            s.sortingOrder = 30000;
+            pips[i] = s;
+        }
+        UpdatePips();
+    }
+
+    void UpdatePips()
+    {
+        if (pips == null) return;
+        for (int i = 0; i < pips.Length; i++)
+            pips[i].color = i < HitsLeft ? new Color(0.35f, 0.6f, 1f) : new Color(0.1f, 0.1f, 0.15f, 0.6f);
     }
 
     public void Befriend()

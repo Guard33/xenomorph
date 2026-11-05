@@ -5,7 +5,8 @@ using UnityEngine.InputSystem;
 
 // The alien the player controls.
 // W A S D move up, left, down, right. H J K L are the four skill slots.
-// Level 1 only has H (Small Beam); J K L unlock as the alien evolves.
+// Level 1 only has H (Small Beam). After Level 1 the player picks a J skill on the
+// Evolve screen: Shotgun Beam, Friend Trap or Piercing Beam. K and L come later.
 // The sprite is a placeholder (a dark villager) until our real alien art is ready.
 [RequireComponent(typeof(Rigidbody2D))]
 public class AlienPlayer : MonoBehaviour
@@ -46,6 +47,27 @@ public class AlienPlayer : MonoBehaviour
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
         Hp = maxHp;
+    }
+
+    void Start()
+    {
+        // J is the skill picked on the Evolve screen after Level 1.
+        // Testing Level 2 straight from the editor (nothing picked) uses the level's default.
+        string j = UpgradePath.PickedId(0);
+        if (j == null && LevelInfo.Instance != null && LevelInfo.Instance.level >= 2) j = LevelInfo.Instance.defaultJSkill;
+        if (j != null) SetSkill(1, j);
+    }
+
+    // Put a skill on a key (by its UpgradePath id)
+    public void SetSkill(int slot, string id)
+    {
+        AlienSkill s = skills[slot];
+        UpgradePath.Option o = UpgradePath.Find(id);
+        s.id = id;
+        s.name = o != null ? o.name : id;
+        s.unlocked = true;
+        s.cooldown = id == "spread_beam" ? 1.4f : id == "friend_trap" ? 6f : id == "pierce_beam" ? 2.5f : 1f;
+        s.timer = 0f;
     }
 
     void Update()
@@ -96,28 +118,69 @@ public class AlienPlayer : MonoBehaviour
         s.Use();
 
         if (slot == 0) FireSmallBeam();
+        else if (s.id == "spread_beam") FireShotgun();
+        else if (s.id == "friend_trap") FriendTrap.Place(transform.position);
+        else if (s.id == "pierce_beam") FirePiercing();
     }
 
     // A short straight beam in the direction the alien is facing.
-    // The closest person inside the beam becomes a friend.
+    // The closest person inside the beam is hit (most people are befriended at once).
     public Civilian FireSmallBeam()
     {
         Vector2 origin = transform.position;
         BeamEffect.Spawn(origin, Facing, beamRange, beamWidth, new Color(0.45f, 1f, 0.55f, 0.85f));
+        Civilian hit = FirstInLine(origin, Facing, beamRange, beamWidth);
+        if (hit != null) hit.Hit();
+        return hit;
+    }
 
+    // J option: Shotgun Beam - 5 short beams in a wide fan, each hits the first person it touches
+    public int FireShotgun()
+    {
+        const float range = 3.2f, width = 0.6f;
+        Vector2 origin = transform.position;
+        int hits = 0;
+        foreach (float angle in new[] { -32f, -16f, 0f, 16f, 32f })
+        {
+            Vector2 dir = Quaternion.Euler(0f, 0f, angle) * Facing;
+            BeamEffect.Spawn(origin, dir, range, width * 0.6f, new Color(0.96f, 0.5f, 0.75f, 0.85f));
+            Civilian c = FirstInLine(origin, dir, range, width);
+            if (c != null) { c.Hit(); hits++; }
+        }
+        return hits;
+    }
+
+    // J option: Piercing Beam - a long beam that goes through people and hits all of them
+    public int FirePiercing()
+    {
+        const float range = 9f, width = 0.8f;
+        Vector2 origin = transform.position;
+        BeamEffect b = BeamEffect.Spawn(origin, Facing, range, width * 0.7f, new Color(0.55f, 0.8f, 1f, 0.9f));
+        b.life = 0.35f;
+        int hits = 0;
+        foreach (Civilian c in Civilian.All.ToArray())
+            if (c.CanBeBefriended && InLine(origin, Facing, range, width, c.transform.position)) { c.Hit(); hits++; }
+        return hits;
+    }
+
+    static bool InLine(Vector2 origin, Vector2 dir, float range, float width, Vector2 p)
+    {
+        Vector2 to = p - origin;
+        float along = Vector2.Dot(to, dir);
+        float side = Mathf.Abs(to.x * dir.y - to.y * dir.x);
+        return along >= -0.3f && along <= range && side <= width * 0.5f + 0.3f;
+    }
+
+    static Civilian FirstInLine(Vector2 origin, Vector2 dir, float range, float width)
+    {
         Civilian hit = null;
         float best = float.MaxValue;
         foreach (Civilian c in Civilian.All)
         {
-            if (!c.CanBeBefriended) continue;
-            Vector2 to = (Vector2)c.transform.position - origin;
-            float along = Vector2.Dot(to, Facing);
-            float side = Mathf.Abs(to.x * Facing.y - to.y * Facing.x);
-            if (along < -0.3f || along > beamRange || side > beamWidth * 0.5f + 0.3f) continue;
+            if (!c.CanBeBefriended || !InLine(origin, dir, range, width, c.transform.position)) continue;
+            float along = Vector2.Dot((Vector2)c.transform.position - origin, dir);
             if (along < best) { best = along; hit = c; }
         }
-        if (hit != null)
-            hit.Befriend();
         return hit;
     }
 
@@ -186,6 +249,7 @@ public class AlienPlayer : MonoBehaviour
 public class AlienSkill
 {
     public string key;
+    public string id;     // which skill this is (UpgradePath id); H is always the Small Beam
     public string name;
     public bool unlocked;
     public float cooldown;

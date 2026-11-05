@@ -5,7 +5,7 @@ using UnityEngine.InputSystem;
 
 // Small map of level 1 in the top-right corner. Press M to hide or show it.
 // Green dot = alien, white dots = people, red squares = exits, grey dot = UFO.
-// The map picture is made from Level1Data, so it updates when the level data changes.
+// The map picture is made from the current level's data, so it updates when the level data changes.
 public class MiniMap : MonoBehaviour
 {
     public int pixelsPerTile = 4;
@@ -25,6 +25,10 @@ public class MiniMap : MonoBehaviour
     static readonly Color Building = new Color32(160, 70, 60, 255);
     static readonly Color Field = new Color32(215, 185, 95, 255);
     static readonly Color Tree = new Color32(35, 95, 45, 255);
+    static readonly Color Concrete = new Color32(128, 124, 108, 255);
+    static readonly Color Dirt = new Color32(140, 96, 50, 255);
+    static readonly Color Vehicle = new Color32(70, 90, 60, 255);
+    static readonly Color Fence = new Color32(40, 36, 44, 255);
 
     void Start()
     {
@@ -32,7 +36,7 @@ public class MiniMap : MonoBehaviour
         if (player != null) alien = player.transform;
 
         GameObject ufo = GameObject.Find("UFO (start)");
-        ufoPosition = ufo != null ? (Vector2)ufo.transform.position + Vector2.one : RoadNetwork.TileCenter(Level1Data.Start);
+        ufoPosition = ufo != null ? (Vector2)ufo.transform.position + Vector2.one : RoadNetwork.TileCenter(LevelMap.Current.Start);
 
         visible = showOnStart;
         BuildTexture();
@@ -49,7 +53,8 @@ public class MiniMap : MonoBehaviour
 
     void BuildTexture()
     {
-        int W = Level1Data.Width, H = Level1Data.Height, s = pixelsPerTile;
+        LevelMap map = LevelMap.Current;
+        int W = map.Width, H = map.Height, s = pixelsPerTile;
         mapTexture = new Texture2D(W * s, H * s, TextureFormat.RGBA32, false);
         mapTexture.filterMode = FilterMode.Point;
         mapTexture.wrapMode = TextureWrapMode.Clamp;
@@ -71,19 +76,21 @@ public class MiniMap : MonoBehaviour
         for (int row = 0; row < H; row++)
             for (int x = 0; x < W; x++)
             {
-                char g = Level1Data.Ground[row][x];
-                char p = Level1Data.Paths[row][x];
-                Color c = (g == '~' || g == '=') ? Water : Grass;
+                char g = map.Ground[row][x];
+                char p = map.Paths[row][x];
+                Color c = (g == '~' || g == '=') ? Water : g == 'c' ? Concrete : (g == 'd' || g == 's') ? Dirt : Grass;
                 if (p == '#') c = Bridge;
                 else if (p != '.') c = Road;
                 Fill(x, row, 1, 1, c);
             }
 
-        foreach (Level1Data.Obj o in Level1Data.Objects)
+        foreach (Obj o in map.Objects)
         {
             if (o.kind == "field") Fill(o.x, o.y, o.w, o.h, Field);
             else if (o.kind == "building") Fill(o.x, o.y, o.w, o.h, Building);
             else if (o.kind == "tree") Fill(o.x, o.y, 1, 1, Tree);
+            else if (o.kind == "vehicle") Fill(o.x, o.y, o.w, o.h, Vehicle);
+            else if (o.kind == "fence") Fill(o.x, o.y, o.w, o.h, Fence);
         }
 
         mapTexture.SetPixels(pixels);
@@ -99,8 +106,8 @@ public class MiniMap : MonoBehaviour
         DrawRect(new Rect(r.x - 2, r.y - 2, w + 4, h + 4), new Color(0f, 0f, 0f, 0.5f));
         GUI.DrawTexture(r, mapTexture);
 
-        Mark(r, RoadNetwork.TileCenter(Level1Data.ExitA), new Color(1f, 0.15f, 0.15f), 7 * k);
-        Mark(r, RoadNetwork.TileCenter(Level1Data.ExitB), new Color(1f, 0.15f, 0.15f), 7 * k);
+        foreach (Vector2Int exit in LevelMap.Current.Exits)
+            Mark(r, RoadNetwork.TileCenter(exit), new Color(1f, 0.15f, 0.15f), 7 * k);
         Mark(r, ufoPosition, new Color(0.8f, 0.8f, 0.85f), 6 * k);
         foreach (Civilian c in Civilian.All)
             if (c.CanBeBefriended) Mark(r, c.transform.position, Color.white, 4 * k);
@@ -113,8 +120,8 @@ public class MiniMap : MonoBehaviour
 
     void Mark(Rect r, Vector2 world, Color color, float size)
     {
-        float u = world.x / Level1Data.Width;
-        float v = world.y / Level1Data.Height;
+        float u = world.x / LevelMap.Current.Width;
+        float v = world.y / LevelMap.Current.Height;
         Vector2 p = new Vector2(r.x + u * r.width, r.y + (1f - v) * r.height);
         DrawRect(new Rect(p.x - size / 2f, p.y - size / 2f, size, size), color);
     }

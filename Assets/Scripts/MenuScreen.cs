@@ -27,7 +27,15 @@ public class MenuScreen : MonoBehaviour
 #endif
     }
 
-    void Play() { SceneManager.LoadScene(gameScene); }
+    void Play()
+    {
+        if (kind == Kind.Start)
+        {
+            UpgradePath.Reset();   // a new game starts with no evolutions
+            SceneManager.LoadScene(gameScene);
+        }
+        else SceneManager.LoadScene(Application.CanStreamedLevelBeLoaded(GameResult.Scene) ? GameResult.Scene : gameScene);   // try the same level again
+    }
 
     void Back()
     {
@@ -67,6 +75,7 @@ public class MenuScreen : MonoBehaviour
 public static class GameResult
 {
     public static string Reason = "Too many people escaped!";
+    public static string Scene = "Level1";   // the level that was lost
     public static int Friends;
     public static int Escaped;
     public static int Needed = 10;

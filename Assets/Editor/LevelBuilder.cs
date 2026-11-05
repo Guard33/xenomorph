@@ -4,32 +4,48 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 
-// Menu: Alien Game > Build Level 1
-// Builds the Level 1 "Quiet Farm Town" scene from Talia's assets
-// (Tiny Tile Town + Town Folk) using the map in Level1Data.
-public static class Level1Builder
+// Menu: Alien Game > Build Level 1 / Build Level 2
+// Builds a level scene from its map data (Level1Data / Level2Data) using Talia's assets
+// (Tiny Tile Town, Town Folk and the military sheet). Started by Danesh for Level 1.
+public static class LevelBuilder
 {
     const string ArtFolder = "Assets/Art";
-    const string PieceFolder = "Assets/Art/Level1Pieces";
     const string AlienFolder = "Assets/Art/Alien";
-    const string TileFolder = "Assets/Tiles/Level1";
+    const string TileFolder = "Assets/Tiles/Level1";   // tile assets shared by all levels
     const string TemplateScene = "Assets/Scenes/SampleScene.unity";
-    const string ScenePath = "Assets/Scenes/Level1.unity";
 
-    static readonly string[] CenterPivot = { "grass", "water", "path_", "bridge", "folk_", "alien", "heart", "exit_marker" };
+    // Sprites placed on the map; looked up in this order
+    static readonly string[] PieceFolders = { "Assets/Art/Level1Pieces", "Assets/Art/Level2Pieces", "Assets/Art/Military" };
+    static readonly string[] CenterPivot = { "grass", "water", "path_", "bridge", "folk_", "alien", "heart", "exit_marker", "ground_" };
 
     [MenuItem("Alien Game/Build Level 1")]
-    public static void Build()
+    public static void Build() => BuildLevel(1);
+
+    [MenuItem("Alien Game/Build Level 2")]
+    public static void BuildLevel2() => BuildLevel(2);
+
+    public static void BuildLevel(int level)
     {
         if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo()) return;
 
+        LevelMap map = LevelMap.ByNumber(level);
+        LevelMap.Current = map;   // so tile positions use this level's size
+        string scenePath = "Assets/Scenes/Level" + level + ".unity";
+
         SetupSprites();
         Dictionary<string, TileBase> tiles = MakeTiles();
-        BuildScene(tiles);
-        Debug.Log("Level 1 built: " + ScenePath);
+        BuildScene(map, level, scenePath, tiles);
+        Debug.Log("Level " + level + " built: " + scenePath);
     }
 
     // ------------------------------------------------------------------ sprites
+    static bool IsPiece(string path)
+    {
+        foreach (string f in PieceFolders)
+            if (path.StartsWith(f + "/")) return true;
+        return false;
+    }
+
     static void SetupSprites()
     {
         string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { ArtFolder });
@@ -43,7 +59,7 @@ public static class Level1Builder
                 TextureImporter ti = AssetImporter.GetAtPath(path) as TextureImporter;
                 if (ti == null) continue;
 
-                bool isPiece = path.StartsWith(PieceFolder);
+                bool isPiece = IsPiece(path);
                 string file = System.IO.Path.GetFileNameWithoutExtension(path);
                 int align = (int)SpriteAlignment.Center;
                 if (isPiece)
@@ -88,10 +104,16 @@ public static class Level1Builder
 
     static Sprite Piece(string name)
     {
-        Sprite s = AssetDatabase.LoadAssetAtPath<Sprite>(PieceFolder + "/" + name + ".png");
-        if (s == null) Debug.LogWarning("Missing sprite: " + name);
-        return s;
+        foreach (string f in PieceFolders)
+        {
+            Sprite s = AssetDatabase.LoadAssetAtPath<Sprite>(f + "/" + name + ".png");
+            if (s != null) return s;
+        }
+        Debug.LogWarning("Missing sprite: " + name);
+        return null;
     }
+
+    static bool IsMilitary(string name) => AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Art/Military/" + name + ".png") != null;
 
     // ------------------------------------------------------------------ tiles
     static Dictionary<string, TileBase> MakeTiles()
@@ -99,7 +121,7 @@ public static class Level1Builder
         if (!AssetDatabase.IsValidFolder("Assets/Tiles")) AssetDatabase.CreateFolder("Assets", "Tiles");
         if (!AssetDatabase.IsValidFolder(TileFolder)) AssetDatabase.CreateFolder("Assets/Tiles", "Level1");
 
-        List<string> names = new List<string> { "grass", "grass_tuft", "water", "water_wave", "bridge" };
+        List<string> names = new List<string> { "grass", "grass_tuft", "water", "water_wave", "bridge", "ground_concrete", "ground_dirt", "ground_dirt_speckled" };
         for (int m = 0; m < 16; m++) names.Add("path_" + m.ToString("00"));
 
         Dictionary<string, TileBase> tiles = new Dictionary<string, TileBase>();
@@ -126,23 +148,25 @@ public static class Level1Builder
     }
 
     // ------------------------------------------------------------------ scene
-    static void BuildScene(Dictionary<string, TileBase> tiles)
+    static void BuildScene(LevelMap map, int level, string scenePath, Dictionary<string, TileBase> tiles)
     {
-        // Start from the template and save over Level1.unity. Saving over the file (instead of
+        // Start from the template and save over the level scene. Saving over the file (instead of
         // deleting it) keeps the scene's ID, so Build Settings and other references stay valid.
         var newScene = AssetDatabase.LoadAssetAtPath<SceneAsset>(TemplateScene) != null
             ? EditorSceneManager.OpenScene(TemplateScene, OpenSceneMode.Single)
             : EditorSceneManager.NewScene(NewSceneSetup.DefaultGameObjects, NewSceneMode.Single);
-        EditorSceneManager.SaveScene(newScene, ScenePath);
-        EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+        EditorSceneManager.SaveScene(newScene, scenePath);
+        EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
 
-        int W = Level1Data.Width, H = Level1Data.Height;
+        int W = map.Width, H = map.Height;
 
         // Opening a scene can unload the tile objects we just made, so load them again from disk
         Dictionary<string, TileBase> fresh = new Dictionary<string, TileBase>();
         foreach (KeyValuePair<string, TileBase> kv in tiles)
             fresh[kv.Key] = AssetDatabase.LoadAssetAtPath<TileBase>(TileFolder + "/" + kv.Key + ".asset");
         tiles = fresh;
+
+        new GameObject("Level Info").AddComponent<LevelInfo>().level = level;
 
         // --- tilemaps
         GameObject grid = new GameObject("Grid", typeof(Grid));
@@ -151,7 +175,7 @@ public static class Level1Builder
         Tilemap water = MakeTilemap(grid, "Water Collision", 0, false);
         water.gameObject.AddComponent<TilemapCollider2D>();
 
-        PaintTiles(ground, paths, water, tiles);
+        PaintTiles(map, ground, paths, water, tiles);
 
         // --- map objects
         Dictionary<string, Transform> groups = new Dictionary<string, Transform>();
@@ -165,10 +189,10 @@ public static class Level1Builder
             return t;
         }
 
-        foreach (Level1Data.Obj o in Level1Data.Objects)
+        foreach (Obj o in map.Objects)
         {
             string groupName = o.kind == "building" ? "Buildings" : o.kind == "field" ? "Fields" : o.kind == "tree" ? "Trees"
-                             : o.kind == "deco" ? "Decorations" : "UFO";
+                             : o.kind == "deco" ? "Decorations" : o.kind == "vehicle" ? "Vehicles" : o.kind == "fence" ? "Fences" : "UFO";
             GameObject go = new GameObject(o.sprite, typeof(SpriteRenderer));
             go.transform.SetParent(Group(groupName));
             float bottom = H - (o.y + o.h);
@@ -177,13 +201,21 @@ public static class Level1Builder
             sr.sprite = Piece(o.sprite);
             sr.sortingOrder = o.kind == "field" ? -1500 : (o.kind == "deco" || o.sprite == "fountain_square") ? -1400 : Mathf.RoundToInt(-bottom * 10f);
 
-            if (o.kind == "building")
+            if (o.kind == "building" || o.kind == "vehicle" || o.kind == "fence")
             {
                 BoxCollider2D box = go.AddComponent<BoxCollider2D>();
                 if (o.sprite == "fountain_square")
                 {
                     box.offset = new Vector2(1f, 1.6f);
                     box.size = new Vector2(0.9f, 0.9f);
+                }
+                else if (sr.sprite != null && IsMilitary(o.sprite))
+                {
+                    // Military sprites aren't whole tiles: fit the box to the drawing (bottom part for buildings)
+                    Vector2 size = sr.sprite.bounds.size;
+                    float h = o.kind == "building" ? size.y * 0.7f : size.y;
+                    box.offset = new Vector2(size.x / 2f, h / 2f);
+                    box.size = new Vector2(Mathf.Max(0.2f, size.x - 0.1f), Mathf.Max(0.2f, h - 0.05f));
                 }
                 else
                 {
@@ -205,8 +237,8 @@ public static class Level1Builder
 
         // --- exits
         Transform exits = Group("Exits");
-        MakeExit(exits, "Exit A (bridge)", Level1Data.ExitA);
-        MakeExit(exits, "Exit B (south road)", Level1Data.ExitB);
+        for (int e = 0; e < map.Exits.Length; e++)
+            MakeExit(exits, "Exit " + (char)('A' + e), map.Exits[e]);
 
         // --- map edges (the alien cannot leave the map)
         Transform edges = Group("Map Edges");
@@ -217,7 +249,7 @@ public static class Level1Builder
 
         // --- the alien (green slime, 2-frame idle bounce)
         GameObject alien = new GameObject("Alien (player)", typeof(SpriteRenderer), typeof(Rigidbody2D), typeof(CircleCollider2D));
-        alien.transform.position = RoadNetwork.TileCenter(Level1Data.Start);
+        alien.transform.position = RoadNetwork.TileCenter(map.Start);
         Sprite[] alienFrames =
         {
             AssetDatabase.LoadAssetAtPath<Sprite>(AlienFolder + "/alien_idle_0.png"),
@@ -236,13 +268,13 @@ public static class Level1Builder
         alien.AddComponent<AlienPlayer>();
         alien.AddComponent<SortByY>();
 
-        // --- civilians
+        // --- people
         Transform people = Group("Civilians");
         Sprite heart = Piece("heart");
         int i = 1;
-        foreach (Level1Data.Civ c in Level1Data.Civilians)
+        foreach (Civ c in map.Civilians)
         {
-            string label = c.lookout ? "Lookout " : "Civilian ";
+            string label = c.IsPolice ? "Police " : c.lookout ? "Lookout " : "Civilian ";
             GameObject civ = new GameObject(label + i++ + " (" + c.sprite.Substring(5) + ")", typeof(SpriteRenderer));
             civ.transform.SetParent(people);
             civ.transform.position = RoadNetwork.TileCenter(new Vector2Int(c.x, c.y));
@@ -254,12 +286,20 @@ public static class Level1Builder
                 script.holdsPosition = true;
                 civ.AddComponent<TownLookout>();
             }
+            if (c.IsPolice)
+            {
+                script.holdsPosition = true;
+                script.toughness = 3;
+                civ.AddComponent<PolicePatrol>().patrol = c.patrol;
+            }
             civ.AddComponent<SortByY>();
         }
 
         // --- level manager (score + friendship meter), tutorial, mini map
-        new GameObject("Level Manager").AddComponent<LevelManager>();
-        new GameObject("Tutorial Guide").AddComponent<TutorialGuide>();
+        LevelManager lm = new GameObject("Level Manager").AddComponent<LevelManager>();
+        lm.totalPeople = map.Civilians.Length;
+        lm.friendsNeeded = map.FriendsNeeded;
+        new GameObject("Tutorial Guide").AddComponent<TutorialGuide>().level = level;
         new GameObject("Mini Map").AddComponent<MiniMap>();
 
         // --- camera
@@ -279,13 +319,13 @@ public static class Level1Builder
 
         var scene = EditorSceneManager.GetActiveScene();
         EditorSceneManager.MarkSceneDirty(scene);
-        EditorSceneManager.SaveScene(scene, ScenePath);
+        EditorSceneManager.SaveScene(scene, scenePath);
 
-        // Make sure Level 1 is in the build (keeps the Start screen first if it is already there)
+        // Make sure the level is in the build (keeps the Start screen first if it is already there)
         List<EditorBuildSettingsScene> list = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
-        if (!list.Exists(s => s.path == ScenePath))
+        if (!list.Exists(s => s.path == scenePath))
         {
-            list.Add(new EditorBuildSettingsScene(ScenePath, true));
+            list.Add(new EditorBuildSettingsScene(scenePath, true));
             EditorBuildSettings.scenes = list.ToArray();
         }
 
@@ -293,18 +333,19 @@ public static class Level1Builder
         SceneView.lastActiveSceneView?.FrameSelected();
     }
 
-    static void PaintTiles(Tilemap ground, Tilemap paths, Tilemap water, Dictionary<string, TileBase> tiles)
+    static void PaintTiles(LevelMap map, Tilemap ground, Tilemap paths, Tilemap water, Dictionary<string, TileBase> tiles)
     {
-        int W = Level1Data.Width, H = Level1Data.Height;
+        int W = map.Width, H = map.Height;
         ground.ClearAllTiles(); paths.ClearAllTiles(); water.ClearAllTiles();
         for (int row = 0; row < H; row++)
         {
             for (int x = 0; x < W; x++)
             {
                 Vector3Int cell = new Vector3Int(x, H - 1 - row, 0);
-                char g = Level1Data.Ground[row][x];
-                char p = Level1Data.Paths[row][x];
-                string gName = g == ',' ? "grass_tuft" : g == '~' ? "water" : g == '=' ? "water_wave" : "grass";
+                char g = map.Ground[row][x];
+                char p = map.Paths[row][x];
+                string gName = g == ',' ? "grass_tuft" : g == '~' ? "water" : g == '=' ? "water_wave"
+                             : g == 'c' ? "ground_concrete" : g == 'd' ? "ground_dirt" : g == 's' ? "ground_dirt_speckled" : "grass";
                 ground.SetTile(cell, tiles[gName]);
                 if (p == '#') paths.SetTile(cell, tiles["bridge"]);
                 else if (p != '.') paths.SetTile(cell, tiles["path_" + System.Convert.ToInt32(p.ToString(), 16).ToString("00")]);
@@ -320,6 +361,9 @@ public static class Level1Builder
     [MenuItem("Alien Game/Repaint Map Tiles")]
     public static void RepaintTiles()
     {
+        LevelInfo info = Object.FindFirstObjectByType<LevelInfo>();
+        LevelMap map = LevelMap.ByNumber(info != null ? info.level : 1);
+        LevelMap.Current = map;
         Dictionary<string, TileBase> tiles = new Dictionary<string, TileBase>();
         foreach (string guid in AssetDatabase.FindAssets("t:TileBase", new[] { TileFolder }))
         {
@@ -329,7 +373,7 @@ public static class Level1Builder
         Tilemap ground = GameObject.Find("Grid/Ground").GetComponent<Tilemap>();
         Tilemap paths = GameObject.Find("Grid/Roads").GetComponent<Tilemap>();
         Tilemap water = GameObject.Find("Grid/Water Collision").GetComponent<Tilemap>();
-        PaintTiles(ground, paths, water, tiles);
+        PaintTiles(map, ground, paths, water, tiles);
         EditorSceneManager.MarkSceneDirty(EditorSceneManager.GetActiveScene());
         EditorSceneManager.SaveScene(EditorSceneManager.GetActiveScene());
     }
