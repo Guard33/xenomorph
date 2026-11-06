@@ -15,9 +15,11 @@ public class Civilian : MonoBehaviour
     public float wanderRadius = 1f;
     public float alertRadius = 2.5f;
     public Sprite heartSprite;
-    public bool holdsPosition;         // lookouts stay put and raise the alarm instead of running
+    public bool holdsPosition;         // lookouts and police don't run away
+    public int toughness = 1;          // beam hits needed to befriend (police: 3)
 
     public bool IsAlerted => alerted;
+    public bool IsCalm => calm > 0f;
     public int TargetExit => exit;     // index into RoadNetwork.Exits
 
     const float RecheckEvery = 0.3f;   // seconds between "is the way still clear?" checks
@@ -30,6 +32,10 @@ public class Civilian : MonoBehaviour
     private readonly List<Vector2> route = new List<Vector2>();
     private int exit = -1;
     private float recheck;
+    private int hits;
+    private float hitFlash;
+    private float calm;                // Calm Hum: seconds left of not panicking
+    private SpriteRenderer[] pips;     // hit points shown above tough people
     private Transform alien;
     private SpriteRenderer sr;
 
@@ -46,11 +52,20 @@ public class Civilian : MonoBehaviour
         AlienPlayer player = FindFirstObjectByType<AlienPlayer>();
         if (player != null) alien = player.transform;
         waitTimer = Random.Range(0.5f, 2.5f);
+        if (toughness > 1) MakePips();
     }
 
     void Update()
     {
         if (gone) return;
+
+        if (calm > 0f) calm -= Time.deltaTime;
+
+        if (hitFlash > 0f)
+        {
+            hitFlash -= Time.deltaTime;
+            if (sr != null) sr.color = hitFlash > 0f ? new Color(0.6f, 1f, 0.7f) : Color.white;
+        }
 
         if (!alerted && !holdsPosition && alien != null &&
             Vector2.Distance(alien.position, transform.position) < alertRadius)
@@ -63,7 +78,7 @@ public class Civilian : MonoBehaviour
     // Scared: run along the roads to the closest exit the alien isn't blocking
     public void Alert()
     {
-        if (alerted || gone || holdsPosition) return;
+        if (alerted || gone || holdsPosition || IsCalm) return;
         alerted = true;
         PickRoute();
     }
@@ -87,13 +102,28 @@ public class Civilian : MonoBehaviour
             PickRoute();
     }
 
+    // Calm Hum: stop panicking for a while. Runners stop and settle where they are
+    // (that becomes their new home, so they never walk through buildings to get back).
+    public void CalmDown(float seconds)
+    {
+        if (gone) return;
+        calm = Mathf.Max(calm, seconds);
+        if (!alerted) return;
+        alerted = false;
+        route.Clear();
+        exit = -1;
+        home = transform.position;
+        target = home;
+        waitTimer = 0.5f;
+    }
+
     // Everyone within radius of a point gets scared (used by the lookouts' alarm)
     public static int AlertAround(Vector2 point, float radius)
     {
         int count = 0;
         foreach (Civilian c in All.ToArray())
         {
-            if (c.alerted || c.gone || c.holdsPosition) continue;
+            if (c.alerted || c.gone || c.holdsPosition || c.IsCalm) continue;
             if (Vector2.Distance(c.transform.position, point) > radius) continue;
             c.Alert();
             count++;
@@ -169,6 +199,48 @@ public class Civilian : MonoBehaviour
         Destroy(gameObject);
     }
 
+    // A beam (or trap) hits this person. Most people are befriended at once;
+    // tough people (police) need several hits. Returns true if they are befriended.
+    public bool Hit(int damage = 1)
+    {
+        if (gone) return false;
+        hits += damage;
+        if (hits >= toughness)
+        {
+            Befriend();
+            return true;
+        }
+        hitFlash = 0.15f;
+        UpdatePips();
+        return false;
+    }
+
+    public int HitsLeft => Mathf.Max(0, toughness - hits);
+
+    void MakePips()
+    {
+        pips = new SpriteRenderer[toughness];
+        for (int i = 0; i < toughness; i++)
+        {
+            GameObject p = new GameObject("HP " + (i + 1));
+            p.transform.SetParent(transform, false);
+            p.transform.localPosition = new Vector3((i - (toughness - 1) / 2f) * 0.22f - 0.08f, 0.7f, 0f);
+            p.transform.localScale = new Vector3(0.16f, 0.16f, 1f);
+            SpriteRenderer s = p.AddComponent<SpriteRenderer>(); Glow.Unlit(s);
+            s.sprite = BeamEffect.Pixel;
+            s.sortingOrder = 30000;
+            pips[i] = s;
+        }
+        UpdatePips();
+    }
+
+    void UpdatePips()
+    {
+        if (pips == null) return;
+        for (int i = 0; i < pips.Length; i++)
+            pips[i].color = i < HitsLeft ? new Color(0.35f, 0.6f, 1f) : new Color(0.1f, 0.1f, 0.15f, 0.6f);
+    }
+
     public void Befriend()
     {
         if (gone) return;
@@ -185,7 +257,7 @@ public class Civilian : MonoBehaviour
             GameObject heart = new GameObject("Heart");
             heart.transform.SetParent(transform, false);
             heart.transform.localPosition = new Vector3(0f, 0.8f, 0f);
-            SpriteRenderer hs = heart.AddComponent<SpriteRenderer>();
+            SpriteRenderer hs = heart.AddComponent<SpriteRenderer>(); Glow.Unlit(hs);
             hs.sprite = heartSprite;
             hs.sortingOrder = 30000;
         }

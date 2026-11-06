@@ -28,7 +28,7 @@ public class BeamEffect : MonoBehaviour
         go.transform.position = origin;
         go.transform.rotation = Quaternion.Euler(0f, 0f, Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg);
         go.transform.localScale = new Vector3(length, width, 1f);
-        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+        SpriteRenderer sr = go.AddComponent<SpriteRenderer>(); Glow.Unlit(sr);
         sr.sprite = Pixel;
         sr.sortingOrder = 29000;
         return FadeOut(sr, color, 0.25f);

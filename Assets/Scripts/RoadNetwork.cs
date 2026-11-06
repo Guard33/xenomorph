@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-// Where people can walk on the Level 1 map, and the way to each exit.
+// Where people can walk on the current level's map, and the way to each exit.
 // The map is a grid of tiles: water (except the bridge), buildings and trees are blocked.
 // Scared people follow the cheapest route, and roads are cheaper than grass,
 // so they run along the roads and only cross the river at the bridge.
@@ -16,18 +16,20 @@ public static class RoadNetwork
 
     static bool[,] blocked;
     static float[][,] distToExit;     // one cost map per exit
+    static LevelMap builtFor;         // the map the caches above were made for
 
-    public static readonly Vector2Int[] Exits = { Level1Data.ExitA, Level1Data.ExitB };
+    static LevelMap Map => LevelMap.Current;
+    public static Vector2Int[] Exits => Map.Exits;
 
     // Centre of a map tile in world space (map rows start at the top).
     public static Vector2 TileCenter(Vector2Int tile)
     {
-        return new Vector2(tile.x + 0.5f, Level1Data.Height - 1 - tile.y + 0.5f);
+        return new Vector2(tile.x + 0.5f, Map.Height - 1 - tile.y + 0.5f);
     }
 
     public static Vector2Int TileAt(Vector2 world)
     {
-        return new Vector2Int(Mathf.FloorToInt(world.x), Level1Data.Height - 1 - Mathf.FloorToInt(world.y));
+        return new Vector2Int(Mathf.FloorToInt(world.x), Map.Height - 1 - Mathf.FloorToInt(world.y));
     }
 
     public static bool Walkable(Vector2Int t)
@@ -38,28 +40,31 @@ public static class RoadNetwork
 
     public static bool Walkable(Vector2 world) => Walkable(TileAt(world));
 
-    static bool InMap(Vector2Int t) => t.x >= 0 && t.y >= 0 && t.x < Level1Data.Width && t.y < Level1Data.Height;
+    static bool InMap(Vector2Int t) => t.x >= 0 && t.y >= 0 && t.x < Map.Width && t.y < Map.Height;
 
-    static bool IsRoad(int x, int y) => Level1Data.Paths[y][x] != '.';
+    static bool IsRoad(int x, int y) => Map.Paths[y][x] != '.';
+
+    public static bool BlocksWalking(string kind) => kind == "building" || kind == "tree" || kind == "vehicle" || kind == "fence" || kind == "lamp";
 
     static readonly Vector2Int[] Dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 
     static void Build()
     {
-        if (blocked != null) return;
-        int W = Level1Data.Width, H = Level1Data.Height;
+        if (blocked != null && builtFor == Map) return;
+        builtFor = Map;
+        int W = Map.Width, H = Map.Height;
         blocked = new bool[W, H];
 
         for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++)
             {
-                char g = Level1Data.Ground[y][x];
-                if ((g == '~' || g == '=') && Level1Data.Paths[y][x] != '#') blocked[x, y] = true;
+                char g = Map.Ground[y][x];
+                if ((g == '~' || g == '=') && Map.Paths[y][x] != '#') blocked[x, y] = true;
             }
 
-        foreach (Level1Data.Obj o in Level1Data.Objects)
+        foreach (Obj o in Map.Objects)
         {
-            if (o.kind != "building" && o.kind != "tree") continue;
+            if (!BlocksWalking(o.kind)) continue;
             for (int y = o.y; y < o.y + o.h; y++)
                 for (int x = o.x; x < o.x + o.w; x++)
                     if (InMap(new Vector2Int(x, y))) blocked[x, y] = true;
@@ -74,7 +79,7 @@ public static class RoadNetwork
     // Cost to reach one exit from every tile (Dijkstra from the exit)
     static float[,] CostMap(Vector2Int exit)
     {
-        int W = Level1Data.Width, H = Level1Data.Height;
+        int W = Map.Width, H = Map.Height;
         float[,] dist = new float[W, H];
         for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++) dist[x, y] = float.MaxValue;
@@ -112,7 +117,7 @@ public static class RoadNetwork
         Vector2Int t = NearestWalkable(TileAt(from));
 
         // Walk downhill on the cost map until we reach the exit
-        int guard = Level1Data.Width * Level1Data.Height;
+        int guard = Map.Width * Map.Height;
         while (dist[t.x, t.y] > 0f && guard-- > 0)
         {
             route.Add(TileCenter(t));
@@ -128,9 +133,9 @@ public static class RoadNetwork
         route.Add(TileCenter(t));
 
         Vector2 outward = Vector2.zero;
-        if (t.x >= Level1Data.Width - 1) outward = Vector2.right;
+        if (t.x >= Map.Width - 1) outward = Vector2.right;
         else if (t.x <= 0) outward = Vector2.left;
-        else if (t.y >= Level1Data.Height - 1) outward = Vector2.down;
+        else if (t.y >= Map.Height - 1) outward = Vector2.down;
         else if (t.y <= 0) outward = Vector2.up;
         route.Add(TileCenter(t) + outward * 1.5f);
         return route;

@@ -97,6 +97,7 @@ public class LevelManager : MonoBehaviour
         GameResult.Friends = friends;
         GameResult.Escaped = escaped;
         GameResult.Needed = friendsNeeded;
+        GameResult.Scene = SceneManager.GetActiveScene().name;
         Invoke(nameof(ShowGameOver), 1.5f);
     }
 
@@ -127,6 +128,29 @@ public class LevelManager : MonoBehaviour
         else Restart();
     }
 
+    int LevelNumber => LevelInfo.Instance != null ? LevelInfo.Instance.level : 1;
+
+    // After this level the alien evolves (Evolve screen), then the next level is played.
+    // Only offered when the next level exists.
+    bool HasNextLevel
+    {
+        get
+        {
+            int tier = LevelNumber - 1;
+            return tier < UpgradePath.Tiers.Length && UpgradePath.Tiers[tier].scene != null;
+        }
+    }
+
+    void NextLevel()
+    {
+        Time.timeScale = 1f;
+        int tier = LevelNumber - 1;
+        // Not evolved for this level yet: pick the new skill first. Already picked (replay): go straight on.
+        string scene = UpgradePath.Chosen[tier] < 0 ? "UpgradeScreen" : UpgradePath.Tiers[tier].scene;
+        if (Application.CanStreamedLevelBeLoaded(scene)) SceneManager.LoadScene(scene);
+        else MainMenu();
+    }
+
     void Update()
     {
         if (flashTimer > 0f) flashTimer -= Time.deltaTime;
@@ -142,7 +166,8 @@ public class LevelManager : MonoBehaviour
 #endif
         if (showEnding)
         {
-            if (restart || enter) Restart();
+            if (enter) { if (HasNextLevel) NextLevel(); else Restart(); }
+            else if (restart) Restart();
             else if (esc) MainMenu();
             return;
         }
@@ -161,13 +186,20 @@ public class LevelManager : MonoBehaviour
         // Top-left: friends and escaped
         // Before the meter is full the goal is 10; after that it's the whole town
         int goal = won ? totalPeople : friendsNeeded;
-        Hud.Text(new Rect(14f * k, 12f * k, 400f * k, 20f * k), "Friends " + friends + "/" + goal, 15, Color.white, TextAnchor.MiddleLeft);
-        Hud.Text(new Rect(14f * k, 36f * k, 400f * k, 20f * k), "Escaped " + escaped, 15, escaped > 0 ? new Color(1f, 0.6f, 0.55f) : new Color(1f, 1f, 1f, 0.75f), TextAnchor.MiddleLeft);
+        string friendsLine = "Friends " + friends + "/" + goal, escapedLine = "Escaped " + escaped;
+        bool showHp = alien != null && alienCanDie;
+        // Wooden board behind the stats so they stand out from the map
+        float tx = 24f * k;
+        float boardW = Mathf.Max(Hud.TextWidth(friendsLine, 15), Hud.TextWidth(escapedLine, 15)) + 32f * k;
+        if (showHp) boardW = Mathf.Max(boardW, alien.maxHp * 5 * u + 22f * k);
+        Hud.Board(new Rect(10f * k, 8f * k, boardW, (showHp ? 86f : 68f) * k));
+        Hud.Text(new Rect(tx, 16f * k, 400f * k, 20f * k), friendsLine, 15, Color.white, TextAnchor.MiddleLeft);
+        Hud.Text(new Rect(tx, 40f * k, 400f * k, 20f * k), escapedLine, 15, escaped > 0 ? new Color(1f, 0.62f, 0.55f) : new Color(1f, 0.93f, 0.8f), TextAnchor.MiddleLeft);
 
         // HP under the score, only when it matters
-        if (alien != null && alienCanDie)
+        if (showHp)
             for (int i = 0; i < alien.maxHp; i++)
-                Hud.Fill(new Rect(14f * k + i * 5 * u, 62f * k, 4 * u, 4 * u), i < alien.Hp ? new Color(0.95f, 0.3f, 0.35f) : new Color(1f, 1f, 1f, 0.25f));
+                Hud.Fill(new Rect(tx + i * 5 * u, 64f * k, 4 * u, 4 * u), i < alien.Hp ? new Color(0.95f, 0.3f, 0.35f) : new Color(0f, 0f, 0f, 0.35f));
 
         // Bottom-left: friendship meter (pixel bar)
         float bw = 70 * u, bh = 4 * u;
@@ -199,7 +231,7 @@ public class LevelManager : MonoBehaviour
     // the player can keep brainwashing the rest of the town afterwards.
     void DrawWinPopup(float k)
     {
-        const string title = "Meter full!", line1 = "Ready to evolve", line2 = "Level 2 coming soon";
+        const string title = "Meter full!", line1 = "Ready to evolve", line2 = "Get everyone to finish";
         float pad = 18f * k, closeW = 34f * k;
         // Size the card to its text so nothing spills out
         float textW = Mathf.Max(Hud.TextWidth(title, 20) + closeW, Mathf.Max(Hud.TextWidth(line1, 14), Hud.TextWidth(line2, 14)));
@@ -227,14 +259,29 @@ public class LevelManager : MonoBehaviour
         Hud.Panel(r, PanelColor);
 
         Hud.Text(new Rect(r.x, r.y + 26f * k, w, 36f * k), "Level complete!", 28, Green);
-        Hud.Text(new Rect(r.x, r.y + 84f * k, w, 20f * k), "Quiet Farm Town is brainwashed", 14, Color.white);
+        Hud.Text(new Rect(r.x, r.y + 84f * k, w, 20f * k), LevelMap.Current.Name + " is brainwashed", 14, Color.white);
         Hud.Text(new Rect(r.x, r.y + 120f * k, w, 20f * k), "Friends " + friends + "   Escaped " + escaped, 15, Pink);
 
-        float bw = 200f * k, bh = 52f * k, gap = 24f * k;
+        float bh = 52f * k, gap = 18f * k;
         float by = r.y + 172f * k;
-        if (Hud.Button(new Rect(r.x + (w - 2 * bw - gap) / 2f, by, bw, bh), "Play again")) Restart();
-        if (Hud.Button(new Rect(r.x + (w + gap) / 2f, by, bw, bh), "Main menu")) MainMenu();
-        Hud.Text(new Rect(r.x, r.yMax - 40f * k, w, 16f * k), "Enter = play again   Esc = menu", 11, new Color(1f, 1f, 1f, 0.45f));
+        if (HasNextLevel)
+        {
+            // Evolve (or Next level on a replay) / Play again / Menu
+            float bw = 150f * k;
+            float bx = r.x + (w - 3 * bw - 2 * gap) / 2f;
+            bool evolved = UpgradePath.Chosen[LevelNumber - 1] >= 0;
+            if (Hud.Button(new Rect(bx, by, bw, bh), evolved ? "Next level" : "Evolve")) NextLevel();
+            if (Hud.Button(new Rect(bx + bw + gap, by, bw, bh), "Play again", 14)) Restart();
+            if (Hud.Button(new Rect(bx + 2 * (bw + gap), by, bw, bh), "Menu")) MainMenu();
+            Hud.Text(new Rect(r.x, r.yMax - 40f * k, w, 16f * k), "Enter = " + (evolved ? "next level" : "evolve") + "   R = play again   Esc = menu", 11, new Color(1f, 1f, 1f, 0.45f));
+        }
+        else
+        {
+            float bw = 200f * k;
+            if (Hud.Button(new Rect(r.x + (w - 2 * bw - gap) / 2f, by, bw, bh), "Play again")) Restart();
+            if (Hud.Button(new Rect(r.x + (w + gap) / 2f, by, bw, bh), "Main menu")) MainMenu();
+            Hud.Text(new Rect(r.x, r.yMax - 40f * k, w, 16f * k), "Enter = play again   Esc = menu", 11, new Color(1f, 1f, 1f, 0.45f));
+        }
     }
 
     void DrawSkills(float k, float u)

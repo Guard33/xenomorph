@@ -33,8 +33,8 @@ public class TownLookout : MonoBehaviour
         AlienPlayer player = FindFirstObjectByType<AlienPlayer>();
         if (player != null) alien = player.transform;
 
-        circle = MakeCircle();
-        mark = MakeMark();
+        circle = MakeCircle(transform, watchRadius);
+        mark = MakeMark(transform);
     }
 
     public bool AlienInView =>
@@ -51,7 +51,7 @@ public class TownLookout : MonoBehaviour
 
         if (cooldown > 0f) cooldown -= Time.deltaTime;
 
-        if (AlienInView && cooldown <= 0f)
+        if (AlienInView && cooldown <= 0f && !civ.IsCalm)
         {
             warning += Time.deltaTime;
             if (warning >= warningTime) RingAlarm();
@@ -78,7 +78,7 @@ public class TownLookout : MonoBehaviour
         GameObject pulse = new GameObject("Alarm Pulse");
         pulse.transform.position = transform.position;
         pulse.transform.localScale = Vector3.one * alarmRadius * 2f;
-        SpriteRenderer sr = pulse.AddComponent<SpriteRenderer>();
+        SpriteRenderer sr = pulse.AddComponent<SpriteRenderer>(); Glow.Unlit(sr);
         sr.sprite = CircleSprite();
         sr.sortingOrder = -1440;
         BeamEffect.FadeOut(sr, new Color(1f, 0.25f, 0.2f, 0.45f), 0.6f);
@@ -93,21 +93,22 @@ public class TownLookout : MonoBehaviour
         return a >= 0 && b > a ? n.Substring(a + 1, b - a - 1).Replace('-', ' ') : "lookout";
     }
 
-    SpriteRenderer MakeCircle()
+    // Shared with PolicePatrol: the faint watch circle and the "!" above the head
+    public static SpriteRenderer MakeCircle(Transform parent, float radius)
     {
         GameObject go = new GameObject("Watch Circle");
-        go.transform.SetParent(transform, false);
-        go.transform.localScale = Vector3.one * watchRadius * 2f;
-        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+        go.transform.SetParent(parent, false);
+        go.transform.localScale = Vector3.one * radius * 2f;
+        SpriteRenderer sr = go.AddComponent<SpriteRenderer>(); Glow.Unlit(sr);
         sr.sprite = CircleSprite();
         sr.sortingOrder = -1450;
         return sr;
     }
 
-    TextMesh MakeMark()
+    public static TextMesh MakeMark(Transform parent)
     {
         GameObject go = new GameObject("Alert Mark");
-        go.transform.SetParent(transform, false);
+        go.transform.SetParent(parent, false);
         go.transform.localPosition = new Vector3(0f, 1.1f, 0f);
         TextMesh t = go.AddComponent<TextMesh>();
         t.anchor = TextAnchor.MiddleCenter;
@@ -126,7 +127,7 @@ public class TownLookout : MonoBehaviour
     static Sprite circleSprite;
 
     // A soft-edged disc, 1 world unit across
-    static Sprite CircleSprite()
+    public static Sprite CircleSprite()
     {
         if (circleSprite != null) return circleSprite;
         const int size = 64;
