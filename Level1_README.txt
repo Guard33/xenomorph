@@ -38,8 +38,12 @@ LEVEL 2 - "FORT MAPLE" (night)
   Scene:   Assets/Scenes/Level2.unity (menu Alien Game > Build Level 2)
   Layout:  Tools/level2_design.py writes Assets/Scripts/Level2Data.cs - edit the layout there and run it
   Art:     Tools/make_level2_art.py makes the street lamp, floodlight, soldier and asphalt road sprites
-  - 62 x 32 map: a fenced army base (Talia's military sprites, drawn at 2x) next to a small town,
-    farmland, UFO field
+  - 62 x 32 map. Every area has a job (the story is at the top of Tools/level2_design.py):
+      crash farm (start, SE): the UFO came down in a farmer's corn; farmhouse, barn, pasture
+      town (W): main street shops, church, police station, fountain square with both lookouts
+      town farm (NW) on the farm lane; Maple woods behind town = cover up to the base fence
+      army base (NE, Talia's sprites at 2x): main gate + barracks, HQ + floodlit parade ground,
+      airfield (aircraft in front of hangars), supply depot + motor pool by the rear gate, ammo dump
   - Night: dim blue sky light, street lamps in town, floodlights on the base, two sweeping
     searchlights on the gate huts (URP 2D lights, made by the builder)
   - 30 people (18 townspeople, 2 lookouts, 6 base staff, 1 police officer, 3 soldiers), 2 exits

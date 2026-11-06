@@ -11,19 +11,39 @@ import sys
 W, H = 62, 32
 OUT = sys.argv[1] if len(sys.argv) > 1 else None
 
+# ---------------------------------------------------------------- the story of the map
+# Fort Maple is a small town that grew up next to an army base. Tonight a UFO crash-landed in
+# a farmer's corn field south-east of town. Every area has a job:
+#   Crash farm (SE)   - where the alien starts: a lonely farm, 3 easy first friends, no lamps.
+#   Meadow + hedgerow - open ground between the farm and town; the hedgerow is cover to sneak in.
+#   Town (W)          - main street with the shops, church, police station and the fountain
+#                       square in the middle (both lookouts stand there), houses on the side
+#                       streets, a pond park. The west road out of town is Exit A.
+#   Town farm (NW)    - the town's barn and fields, reached by the farm lane off the avenue.
+#   Maple woods       - forest between the town farm and the base: cover to reach the base fence,
+#                       which is why a soldier walks the outside of the west fence.
+#   Army base (NE)    - main gate (south) with guard hut, sandbags and barracks; HQ with the
+#                       parade ground in front (open and floodlit: dangerous to cross); command
+#                       centre; airfield (each aircraft parked in front of its hangar); supply depot
+#                       and motor pool next to the rear gate road; ammo dump in the dirt yard.
+#                       The rear gate road is Exit B.
+#   Street lamps light the roads people use; floodlights light the base's open ground.
+
 # ---------------------------------------------------------------- roads
 road = set()
 def hline(y, x0, x1):
     for x in range(x0, x1 + 1): road.add((x, y))
 def vline(x, y0, y1):
     for y in range(y0, y1 + 1): road.add((x, y))
-hline(22, 0, 32)     # main street (west exit)
-vline(32, 12, 22)    # gate road into the base (south gate)
-hline(12, 32, 52)    # base road
-vline(52, 0, 12)     # north gate road (north exit)
-vline(8, 14, 30)     # avenue
-hline(28, 8, 24)     # south street
+hline(22, 0, 44)     # main street: west exit -> town -> base gate -> crash farm
+vline(32, 12, 22)    # main gate road into the base
+hline(12, 32, 52)    # base road along the parade ground
+vline(52, 0, 12)     # rear gate road (north exit)
+vline(8, 12, 30)     # avenue (north to the town farm)
+hline(12, 8, 19)     # farm lane in front of the barn
+hline(28, 8, 24)     # south street (houses)
 vline(18, 22, 28)    # side street
+vline(44, 22, 28)    # crash farm lane
 EXITS = [(0, 22), (52, 0)]
 
 def mask(x, y):
@@ -39,7 +59,7 @@ ground = [[('.' if (x * 7 + y * 3) % 9 else ',') for x in range(W)] for y in ran
 for y in range(2, 20):
     for x in range(29, 61): ground[y][x] = 'c'          # base concrete
 for y in range(14, 20):
-    for x in range(50, 61): ground[y][x] = 's' if (x + y) % 3 == 0 else 'd'   # vehicle yard
+    for x in range(50, 61): ground[y][x] = 's' if (x + y) % 3 == 0 else 'd'   # ammo dump / truck yard
 pond = {(2,26),(3,26),(4,26),(1,27),(2,27),(3,27),(4,27),(5,27),(1,28),(2,28),(3,28),(4,28),(5,28),(2,29),(3,29),(4,29)}
 for (x, y) in pond: ground[y][x] = '=' if (x + y) % 4 == 0 else '~'
 
@@ -49,94 +69,133 @@ def O(s, x, y, w, h, k, sc=1): objs.append((s, x, y, w, h, k, sc))
 def M(s, x, y, w, h, k): O(s, x, y, w, h, k, 2)     # military piece at 2x
 def lamp(x, y): O("street_lamp", x, y, 1, 1, "lamp")
 def flood(x, y): O("flood_light", x, y, 1, 1, "lamp")
+def tree(x, y): O("tree%d" % (len(objs) % 4 + 1), x, y, 1, 1, "tree")
 
-# Base fence: wire along top and bottom (gaps for the two gates), posts down the sides
+# --- Army base. Fence: wire along top and bottom (gaps for the gates), posts down the sides
 for x in range(28, 62, 2):
     if x != 52: O("wire_fence", x, 1, 2, 1, "fence")
     if x != 32: O("wire_fence", x, 20, 2, 1, "fence")
 for y in range(2, 20, 2):
     O("fence_post", 28, y, 1, 2, "fence"); O("fence_post", 61, y, 1, 2, "fence")
-
-# North half of the base: HQ in the middle between the two flag offices, helipad in front
+# Command: HQ in the middle, flag offices either side, command centre, parade ground in front
 M("hq_flag_1", 29, 2, 5, 6, "building")
-M("command_building", 29, 8, 4, 4, "building")
 M("base_hq_large", 36, 2, 8, 6, "building")
 M("hq_flag_2", 46, 2, 5, 6, "building")
-M("helicopter", 34, 9, 3, 2, "vehicle"); M("jet", 38, 9, 3, 2, "vehicle"); M("helicopter", 42, 9, 3, 2, "vehicle")
+M("command_building", 29, 8, 4, 4, "building")
+flood(34, 8); flood(45, 8)                              # parade ground (x34-45, y8-11) is lit
+# Supply depot by the rear gate road (deliveries come in the back)
 M("supply_depot_1", 46, 9, 2, 2, "building"); M("supply_depot_2", 48, 9, 2, 2, "building")
 M("container_upright", 50, 8, 2, 3, "vehicle")
-# East of the north gate: guard hut, garages, motor pool
+# Rear gate and motor pool: guard hut, garages, tanks parked in front, a truck ready to leave
 M("guard_hut_2", 53, 2, 2, 2, "building")
 M("garage_1", 55, 2, 2, 2, "building"); M("garage_2", 57, 2, 2, 2, "building"); M("garage_3", 59, 2, 2, 2, "building")
-M("army_truck", 54, 5, 4, 2, "vehicle"); M("container", 58, 5, 3, 2, "vehicle")
-M("tank", 54, 8, 2, 2, "vehicle"); M("tank", 57, 8, 2, 2, "vehicle")
-# South half: barracks by the gate, hangars, bunker, vehicle yard
-M("barracks_1", 29, 13, 2, 2, "building"); M("barracks_2", 29, 16, 2, 2, "building")
+M("tank", 55, 5, 2, 2, "vehicle"); M("tank", 58, 5, 2, 2, "vehicle")
+M("army_truck", 54, 9, 4, 2, "vehicle")
+flood(53, 6); flood(60, 9)
+# Main gate: guard hut and sandbags, barracks right inside so soldiers are close to the gate
 M("guard_hut_1", 33, 18, 2, 2, "building")
-M("dirt_mound", 35, 19, 2, 1, "vehicle")               # sandbags by the south gate
-M("hangar_small_1", 35, 14, 2, 2, "building"); M("hangar_small_2", 37, 14, 2, 2, "building"); M("hangar_small_3", 39, 14, 2, 2, "building")
-M("barracks_camo", 41, 14, 2, 2, "building")
-M("bunker", 44, 14, 4, 2, "vehicle")
-M("army_truck", 51, 15, 4, 2, "vehicle"); M("container", 56, 15, 3, 2, "vehicle"); M("container_upright", 59, 14, 2, 3, "vehicle")
-M("dirt_mound", 51, 18, 2, 1, "vehicle"); M("dirt_mound", 55, 18, 2, 1, "vehicle")
-# Floodlights around the base
-for (x, y) in [(34, 3), (44, 3), (34, 11), (45, 11), (33, 13), (48, 13), (43, 17), (58, 18), (53, 10), (60, 11)]: flood(x, y)
+M("barracks_1", 29, 13, 2, 2, "building"); M("barracks_2", 29, 15, 2, 2, "building"); M("barracks_camo", 29, 17, 2, 2, "building")
+M("dirt_mound", 29, 19, 2, 1, "vehicle")                # sandbags
+flood(31, 17)
+# Airfield: each aircraft parked in front of its hangar
+M("hangar_small_1", 35, 14, 2, 2, "building"); M("helicopter", 35, 17, 3, 2, "vehicle")
+M("hangar_small_2", 39, 14, 2, 2, "building"); M("helicopter", 39, 17, 3, 2, "vehicle")
+M("hangar_small_3", 43, 14, 2, 2, "building"); M("jet", 43, 17, 3, 2, "vehicle")
+flood(37, 14); flood(41, 14); flood(47, 17)
+# Ammo dump in the dirt yard: bunker behind sandbags, a supply truck and a container
+M("bunker", 50, 14, 4, 2, "vehicle")
+M("dirt_mound", 50, 17, 2, 1, "vehicle"); M("dirt_mound", 52, 17, 2, 1, "vehicle")
+M("army_truck", 55, 14, 4, 2, "vehicle"); M("container", 55, 17, 3, 2, "vehicle")
+flood(59, 17)
 
-# Town (west) - main street north side
+# --- Town. Main street, north side: houses, general store, church, police station, houses
 O("house1", 2, 19, 2, 2, "building"); O("house3", 5, 18, 2, 3, "building")
 O("general_store", 10, 19, 2, 2, "building"); O("church", 13, 19, 2, 2, "building")
 O("base_office", 16, 19, 2, 2, "building")          # police station (town size, not 2x)
 O("house4", 20, 18, 2, 3, "building"); O("house5", 23, 19, 2, 2, "building")
-# main street south side
+# main street, south side: the fountain square is the middle of town
 O("house6", 2, 23, 2, 2, "building"); O("house2", 10, 23, 2, 2, "building")
 O("fountain_square", 13, 23, 2, 3, "building")
 O("house7", 20, 23, 2, 3, "building"); O("house8", 23, 23, 2, 3, "building")
-# avenue (north part)
+# avenue: houses on the way north to the farm
 O("house4", 5, 15, 2, 3, "building"); O("house8", 10, 15, 2, 3, "building")
-# south street, south side
+# south street: houses
 O("house2", 10, 29, 2, 2, "building"); O("house5", 13, 29, 2, 2, "building"); O("house6", 16, 29, 2, 2, "building")
 O("house1", 20, 29, 2, 2, "building"); O("house3", 23, 29, 2, 3, "building")
-# Street lamps along the town roads and outside the south gate
-for (x, y) in [(4, 21), (9, 21), (15, 21), (19, 21), (25, 21), (7, 23), (17, 23), (27, 23), (30, 23),
-               (7, 17), (9, 26), (15, 27), (19, 27), (7, 29), (31, 21), (34, 21)]: lamp(x, y)
-# farmland on the north-west outskirts
+# Street lamps: along the streets people walk, and on the road up to the main gate
+for (x, y) in [(4, 21), (9, 21), (15, 21), (19, 21), (25, 21), (7, 23), (17, 23), (27, 23),
+               (7, 17), (9, 26), (15, 27), (19, 27), (7, 29),
+               (30, 21), (31, 23), (34, 21), (38, 21), (42, 23)]: lamp(x, y)
+# Pond park: hedges around the pond
+for (x, y) in [(0, 26), (6, 29), (1, 30), (5, 25)]: O("bush", x, y, 1, 1, "deco")
+
+# --- Town farm (NW): fields behind the barn yard, the farm lane in front of it
 for (x, y) in [(2, 4), (5, 4), (2, 7), (5, 7)]: O("corn", x, y, 3, 3, "field")
 O("crops_green", 10, 4, 3, 3, "field"); O("crops_red", 13, 4, 3, 3, "field"); O("orchard", 16, 4, 3, 3, "field")
 O("barn", 10, 8, 3, 3, "building"); O("silo", 14, 9, 2, 2, "building"); O("animal_pen", 17, 8, 3, 3, "building")
-# UFO field (south-east) and the fields around it
-O("ufo", 44, 25, 2, 2, "ufo")
-O("corn", 50, 23, 3, 3, "field"); O("crops_green", 50, 27, 3, 3, "field")
-O("corn", 54, 23, 3, 3, "field"); O("crops_red", 54, 27, 3, 3, "field")
-# Trees: forest along the edges, a shelter belt west of the base fence
-trees = [(0,0),(1,0),(3,0),(6,0),(9,0),(12,0),(15,0),(19,0),(21,0),(22,0),(24,0),(26,0),(30,0),(35,0),(40,0),(45,0),(57,0),(60,0),
-         (0,3),(0,6),(0,9),(0,12),(0,15),(21,5),(22,8),(23,11),(20,12),(24,14),(22,16),
-         (25,3),(25,6),(25,9),(25,12),(25,15),(25,18),
-         (61,22),(61,25),(61,28),(59,31),(56,31),(52,31),(48,31),(44,31),(40,31),(36,31),(32,31),(28,30),(27,27),
-         (0,31),(3,31),(6,31),(1,24),(0,20),(11,26),(16,26),(12,27),
-         (36,23),(39,25),(33,26),(30,25),(35,28),(41,28),(58,25),(48,24)]
-for i, (x, y) in enumerate(trees): O("tree%d" % (i % 4 + 1), x, y, 1, 1, "tree")
-# Bushes (no flower beds: the town is on lockdown)
-for (x, y) in [(6, 26), (6, 29), (0, 26), (24, 5), (24, 10), (24, 17), (26, 21), (38, 22), (47, 22)]: O("bush", x, y, 1, 1, "deco")
+lamp(13, 11)                                         # barn yard light
+
+# --- Crash farm (SE): farmhouse and barn on the lane, corn fields, the UFO in a flattened gap
+O("house3", 45, 24, 2, 3, "building")                # farmhouse
+O("barn", 45, 28, 3, 3, "building")
+lamp(43, 26)                                         # porch light at the end of the lane
+for (x, y) in [(48, 22), (51, 22), (54, 25), (48, 25)]: O("corn", x, y, 3, 3, "field")
+O("crops_green", 54, 22, 3, 3, "field"); O("crops_green", 57, 22, 3, 3, "field"); O("crops_green", 57, 25, 3, 3, "field")
+O("crops_red", 48, 28, 3, 3, "field"); O("orchard", 55, 28, 3, 3, "field"); O("orchard", 58, 28, 3, 3, "field")
+O("ufo", 51, 25, 2, 2, "ufo")                        # crashed in the corn
+# The farm's pasture and hay fields fill the land between town and farmhouse
+O("animal_pen", 31, 24, 3, 3, "building"); O("silo", 36, 24, 2, 2, "building")
+for x in [29, 32, 35, 38]: O("crops_green" if x % 2 else "crops_red", x, 28, 3, 3, "field")
+START = (52, 28)
+
+# --- Trees
+for x in [0, 1, 3, 6, 9, 12, 15, 17, 26, 30, 35, 40, 45, 57, 60]: tree(x, 0)            # forest edge (north)
+for y in [3, 6, 9, 12, 15, 18]: tree(0, y)                                              # forest edge (west)
+for x in [0, 3, 6, 27, 43, 53, 61]: tree(x, 31)                        # forest edge (south)
+for y in [21, 24, 27]: tree(61, y)                                                      # forest edge (east)
+# Maple woods: a real forest wrapping behind the town, between the town farm and the base.
+# Every other column is left open so the alien can slip through it (cover on the way to the fence).
+def woods(x0, y0, x1, y1):
+    for y in range(y0, y1 + 1):
+        for x in range(x0, x1 + 1):
+            if x % 2 == 0 and (x * 3 + y * 5) % 7 != 0: tree(x, y)
+woods(20, 2, 26, 10)
+woods(14, 14, 26, 17)
+# Hedgerow between the crash farm's pasture and its corn: cover to sneak from the crash site to town
+for y in [24, 25, 27, 28, 30]: tree(41, y)
+# Shade trees on the south street and in the pond park
+tree(12, 26); tree(16, 26); tree(1, 24)
 
 # ---------------------------------------------------------------- people
 civs = []   # (sprite, x, y, lookout, patrol)
 def C(s, x, y, lookout=False, patrol=-1): civs.append(("folk_" + s, x, y, lookout, patrol))
-town = [("shopkeeper", 12, 21), ("baker", 4, 20), ("farmer", 9, 7), ("fisherman", 6, 27), ("innkeeper", 15, 24),
-        ("grandpa", 10, 26), ("grandma", 14, 26), ("merchant", 19, 20), ("tailor", 22, 21), ("courier", 26, 23),
-        ("painter", 25, 26), ("florist", 16, 25), ("bartender", 9, 24), ("herbalist", 4, 17), ("lamplighter", 7, 22),
-        ("king", 21, 27), ("farmer", 15, 11), ("innkeeper", 19, 30)]
+# Town: people stand where they work or live
+town = [("shopkeeper", 10, 21), ("merchant", 12, 21),        # outside the general store
+        ("scholar", 14, 21),                                  # the church
+        ("tailor", 22, 21), ("baker", 3, 21),                 # in front of their houses
+        ("courier", 26, 22),                                  # heading up the road to the base
+        ("lamplighter", 7, 22),                               # lighting the main street lamps
+        ("bartender", 9, 24), ("innkeeper", 24, 26),
+        ("grandpa", 10, 25), ("grandma", 11, 25),             # on their porch
+        ("florist", 15, 26),                                  # by the fountain
+        ("fisherman", 6, 27), ("painter", 6, 25),             # pond park
+        ("herbalist", 4, 17)]
 for (s, x, y) in town: C(s, x, y)
-C("town-crier", 12, 23, lookout=True); C("mayor", 16, 23, lookout=True)
-base = [("blacksmith", 35, 6), ("carpenter", 45, 8), ("miner", 53, 7), ("courier", 41, 13), ("merchant", 48, 16), ("farmer", 56, 13)]
-for (s, x, y) in base: C(s, x, y)
-# Patrols: one police officer from town up to the south gate, three soldiers on the base
-patrols = [([(22, 22), (32, 22), (32, 13)], "police"),     # main street -> through the south gate
-           ([(33, 12), (51, 12)], "soldier"),               # base road
-           ([(52, 2), (52, 11)], "soldier"),                # north gate road
-           ([(27, 2), (27, 19)], "soldier")]                # outside the west fence
+C("town-crier", 12, 23, lookout=True); C("mayor", 16, 23, lookout=True)   # both watch the square
+C("farmer", 11, 11)                                                     # town farm, barn yard
+# Crash farm: the first people the alien meets
+for (s, x, y) in [("farmer", 46, 27), ("carpenter", 34, 27), ("florist", 47, 23)]: C(s, x, y)
+# Base staff (unarmed): mechanic at the motor pool, depot worker, HQ clerk, cook by the barracks, hangar mechanic
+for (s, x, y) in [("blacksmith", 57, 7), ("miner", 47, 11), ("scholar", 40, 9), ("baker", 31, 15), ("carpenter", 38, 16)]:
+    C(s, x, y)
+# Patrols: the police officer walks from the police station up through the main gate;
+# soldiers walk the base road, the rear gate road and the outside of the west fence (by the woods)
+patrols = [([(17, 22), (32, 22), (32, 13)], "police"),
+           ([(33, 12), (51, 12)], "soldier"),
+           ([(52, 2), (52, 11)], "soldier"),
+           ([(27, 2), (27, 19)], "soldier")]
 for i, (p, s) in enumerate(patrols): C(s, p[0][0], p[0][1], patrol=i)
 patrols = [p for (p, s) in patrols]
-START = (45, 28)
 
 # ---------------------------------------------------------------- checks
 problems = []
