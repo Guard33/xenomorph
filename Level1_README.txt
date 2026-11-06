@@ -11,7 +11,7 @@ Rebuild: menu Alien Game > Build Level 1 (rebuilds the scene from Assets/Scripts
 Play controls
   W A S D   move up / left / down / right
   H         Small Beam - befriends the first person in front of the alien
-  J         skill picked on the Evolve screen after Level 1 (Shotgun Beam, Friend Trap or Piercing Beam)
+  J         skill picked on the Evolve screen after Level 1 (Wide Wave, Calm Hum or Friend Trap)
   K L       skill slots for later powers (locked)
   M         show / hide the mini map
   R         restart the level
@@ -39,4 +39,4 @@ LEVEL 2 - "FORT MAPLE"
   - 30 people (18 townspeople, 2 lookouts, 6 base staff, 4 police), 2 exits (west road, base north gate)
   - Befriend 15 to fill the meter; the level ends when nobody is left
   - Police patrol the streets, need 3 hits, and blow a whistle that scares everyone nearby
-  - Played after Level 1 + the Evolve screen. Pressing Play in Level2.unity directly gives J = Shotgun Beam
+  - Played after Level 1 + the Evolve screen. Pressing Play in Level2.unity directly gives J = Wide Wave

@@ -60,7 +60,7 @@ public class PolicePatrol : MonoBehaviour
         bool seesAlien = alien != null && Vector2.Distance(alien.position, transform.position) < watchRadius;
         if (cooldown > 0f) cooldown -= Time.deltaTime;
 
-        if (seesAlien && cooldown <= 0f)
+        if (seesAlien && cooldown <= 0f && !civ.IsCalm)
         {
             warning += Time.deltaTime;   // stop and stare while deciding to whistle
             if (warning >= warningTime) BlowWhistle();

@@ -51,7 +51,7 @@ public class TownLookout : MonoBehaviour
 
         if (cooldown > 0f) cooldown -= Time.deltaTime;
 
-        if (AlienInView && cooldown <= 0f)
+        if (AlienInView && cooldown <= 0f && !civ.IsCalm)
         {
             warning += Time.deltaTime;
             if (warning >= warningTime) RingAlarm();

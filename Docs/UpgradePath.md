@@ -1,7 +1,7 @@
 # Alien Upgrade Path
 
 *Danesh's part. Builds on the proposal ("learn from your friends", choose your abilities), the outline (brain waves), Jory's `Docs/Progression.md` and the H/J/K/L skill keys in `AlienPlayer`.*
-*Updated by Hemanth (2026-11-05): the J evolution now offers three skills, chosen by Hemanth as game lead.*
+*Updated by Hemanth (2026-11-05): Friend Trap added as a third J choice; J is now in the game.*
 
 ## How it works
 
@@ -18,21 +18,20 @@
 | Evolution | Key | Next level | New threat | Choices |
 |---|---|---|---|---|
 | Start | H | Level 1: Quiet Farm Town | none (tutorial) | Small Beam: befriend one person |
-| 1 | J | Level 2: Fort Maple | police patrols (3 hits each, whistles) | **Shotgun Beam** (brain): 5 short beams in a wide fan · **Friend Trap** (sneak): drop a trap, it befriends everyone near when someone walks by · **Piercing Beam** (brain): long beam that goes through people and hits all of them |
-| 2 | K | Level 3: Downtown | soldiers | **Calm Hum** (sneak): people near the alien stop panicking for 4 s · **Disguise** (sneak): look human for 5 s, nobody runs |
+| 1 | J | Level 2: Fort Maple | police patrols (3 hits each, whistles) | **Wide Wave** (brain): 3 beams in a 40 degree fan · **Calm Hum** (sneak): people near the alien stop panicking for 4 s · **Friend Trap** (sneak, Hemanth): drop a trap, it befriends everyone near when someone walks by |
+| 2 | K | Level 3: Downtown | soldiers | **Long Beam** (brain): double range, goes through people · **Disguise** (sneak): look human for 5 s, nobody runs |
 | 3 | L | Level 4: City Centre | army + time limit | **Tractor Beam** (brain): pull everyone in a big circle · **Friend Army** (sneak): friends come back for 8 s and block an exit |
 
-K and L are designed but not in the game yet (no Level 3 / 4). They need re-planning now that J has the
-wide and long beams (Wide Wave and Long Beam were folded into Shotgun Beam and Piercing Beam).
+K and L are designed but not in the game yet (no Level 3 / 4).
 
 Numbers in the game now (playtest and tune):
 
 | Skill | Cooldown | Notes |
 |---|---|---|
 | Small Beam (H) | 0.6 s | range 3.5 tiles, first person hit |
-| Shotgun Beam (J) | 1.4 s | 5 beams at -32/-16/0/16/32 degrees, range 3.2 tiles, each hits the first person |
+| Wide Wave (J) | 1.2 s | 3 beams at -20/0/20 degrees, range 3.5 tiles, each hits the first person |
+| Calm Hum (J) | 8 s | radius 3 tiles, 4 s: runners stop and settle, lookouts/police in range don't raise the alarm |
 | Friend Trap (J) | 6 s | one trap at a time, goes off when someone is within 1.3 tiles, hits everyone within 3 tiles, lasts 25 s |
-| Piercing Beam (J) | 2.5 s | range 9 tiles, hits everyone in the line |
 
 Police officers need 3 hits; every beam or trap hit counts as one.
 

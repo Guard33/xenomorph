@@ -6,7 +6,7 @@ using UnityEngine.InputSystem;
 // The alien the player controls.
 // W A S D move up, left, down, right. H J K L are the four skill slots.
 // Level 1 only has H (Small Beam). After Level 1 the player picks a J skill on the
-// Evolve screen: Shotgun Beam, Friend Trap or Piercing Beam. K and L come later.
+// Evolve screen: Wide Wave, Calm Hum or Friend Trap. K and L come later.
 // The sprite is a placeholder (a dark villager) until our real alien art is ready.
 [RequireComponent(typeof(Rigidbody2D))]
 public class AlienPlayer : MonoBehaviour
@@ -66,7 +66,7 @@ public class AlienPlayer : MonoBehaviour
         s.id = id;
         s.name = o != null ? o.name : id;
         s.unlocked = true;
-        s.cooldown = id == "spread_beam" ? 1.4f : id == "friend_trap" ? 6f : id == "pierce_beam" ? 2.5f : 1f;
+        s.cooldown = id == "wide_wave" ? 1.2f : id == "calm_hum" ? 8f : id == "friend_trap" ? 6f : 1f;
         s.timer = 0f;
     }
 
@@ -118,9 +118,9 @@ public class AlienPlayer : MonoBehaviour
         s.Use();
 
         if (slot == 0) FireSmallBeam();
-        else if (s.id == "spread_beam") FireShotgun();
+        else if (s.id == "wide_wave") FireWideWave();
+        else if (s.id == "calm_hum") CalmHum();
         else if (s.id == "friend_trap") FriendTrap.Place(transform.position);
-        else if (s.id == "pierce_beam") FirePiercing();
     }
 
     // A short straight beam in the direction the alien is facing.
@@ -134,33 +134,38 @@ public class AlienPlayer : MonoBehaviour
         return hit;
     }
 
-    // J option: Shotgun Beam - 5 short beams in a wide fan, each hits the first person it touches
-    public int FireShotgun()
+    // J option: Wide Wave (Danesh) - 3 beams in a 40 degree fan, each hits the first person it touches
+    public int FireWideWave()
     {
-        const float range = 3.2f, width = 0.6f;
         Vector2 origin = transform.position;
         int hits = 0;
-        foreach (float angle in new[] { -32f, -16f, 0f, 16f, 32f })
+        foreach (float angle in new[] { -20f, 0f, 20f })
         {
             Vector2 dir = Quaternion.Euler(0f, 0f, angle) * Facing;
-            BeamEffect.Spawn(origin, dir, range, width * 0.6f, new Color(0.96f, 0.5f, 0.75f, 0.85f));
-            Civilian c = FirstInLine(origin, dir, range, width);
+            BeamEffect.Spawn(origin, dir, beamRange, beamWidth * 0.6f, new Color(0.96f, 0.5f, 0.75f, 0.85f));
+            Civilian c = FirstInLine(origin, dir, beamRange, beamWidth * 0.7f);
             if (c != null) { c.Hit(); hits++; }
         }
         return hits;
     }
 
-    // J option: Piercing Beam - a long beam that goes through people and hits all of them
-    public int FirePiercing()
+    // J option: Calm Hum (Danesh) - everyone within 3 tiles stops panicking for 4 seconds.
+    // Runners stop and wander home; lookouts and police nearby don't raise the alarm meanwhile.
+    public int CalmHum()
     {
-        const float range = 9f, width = 0.8f;
-        Vector2 origin = transform.position;
-        BeamEffect b = BeamEffect.Spawn(origin, Facing, range, width * 0.7f, new Color(0.55f, 0.8f, 1f, 0.9f));
-        b.life = 0.35f;
-        int hits = 0;
-        foreach (Civilian c in Civilian.All.ToArray())
-            if (c.CanBeBefriended && InLine(origin, Facing, range, width, c.transform.position)) { c.Hit(); hits++; }
-        return hits;
+        const float radius = 3f, seconds = 4f;
+        int calmed = 0;
+        foreach (Civilian c in Civilian.All)
+            if (c.CanBeBefriended && Vector2.Distance(c.transform.position, transform.position) < radius) { c.CalmDown(seconds); calmed++; }
+
+        GameObject pulse = new GameObject("Calm Hum");
+        pulse.transform.position = transform.position;
+        pulse.transform.localScale = Vector3.one * radius * 2f;
+        SpriteRenderer p = pulse.AddComponent<SpriteRenderer>();
+        p.sprite = TownLookout.CircleSprite();
+        p.sortingOrder = -1440;
+        BeamEffect.FadeOut(p, new Color(0.45f, 0.7f, 1f, 0.45f), 0.8f);
+        return calmed;
     }
 
     static bool InLine(Vector2 origin, Vector2 dir, float range, float width, Vector2 p)

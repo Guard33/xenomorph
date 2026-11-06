@@ -1,4 +1,4 @@
-// The alien's upgrade path (Danesh; J tier changed by Hemanth).
+// The alien's upgrade path (Danesh; Friend Trap added to J by Hemanth).
 // The alien starts with the Small Beam on H. At the end of each level it evolves
 // and picks ONE new skill. Evolutions unlock the J, K and L skill keys.
 //   Brain path (pink): catch more people at once.
@@ -39,9 +39,9 @@ public static class UpgradePath
             stage = 2, key = "J", nextLevel = "Level 2: Fort Maple", threat = "Police patrols", scene = "Level2",
             options = new[]
             {
-                new Option { id = "spread_beam", name = "Shotgun Beam", line1 = "5 beams in a", line2 = "wide spread", icon = "wide_wave", brainPath = true },
+                new Option { id = "wide_wave", name = "Wide Wave", line1 = "Wave spreads", line2 = "hits 3 people", icon = "wide_wave", brainPath = true },
+                new Option { id = "calm_hum", name = "Calm Hum", line1 = "People near you", line2 = "stop panicking", icon = "calm_hum", brainPath = false },
                 new Option { id = "friend_trap", name = "Friend Trap", line1 = "Befriends all", line2 = "who walk near", icon = "friend_trap", brainPath = false },
-                new Option { id = "pierce_beam", name = "Piercing Beam", line1 = "Long beam that", line2 = "hits everyone", icon = "long_beam", brainPath = true },
             },
         },
         new Tier
@@ -49,7 +49,7 @@ public static class UpgradePath
             stage = 3, key = "K", nextLevel = "Level 3: Downtown", threat = "Soldiers",
             options = new[]
             {
-                new Option { id = "calm_hum", name = "Calm Hum", line1 = "People near you", line2 = "stop panicking", icon = "calm_hum", brainPath = false },
+                new Option { id = "long_beam", name = "Long Beam", line1 = "Double range", line2 = "through people", icon = "long_beam", brainPath = true },
                 new Option { id = "disguise", name = "Disguise", line1 = "Look human", line2 = "for 5 seconds", icon = "disguise", brainPath = false },
             },
         },

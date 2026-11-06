@@ -19,6 +19,7 @@ public class Civilian : MonoBehaviour
     public int toughness = 1;          // beam hits needed to befriend (police: 3)
 
     public bool IsAlerted => alerted;
+    public bool IsCalm => calm > 0f;
     public int TargetExit => exit;     // index into RoadNetwork.Exits
 
     const float RecheckEvery = 0.3f;   // seconds between "is the way still clear?" checks
@@ -33,6 +34,7 @@ public class Civilian : MonoBehaviour
     private float recheck;
     private int hits;
     private float hitFlash;
+    private float calm;                // Calm Hum: seconds left of not panicking
     private SpriteRenderer[] pips;     // hit points shown above tough people
     private Transform alien;
     private SpriteRenderer sr;
@@ -57,6 +59,8 @@ public class Civilian : MonoBehaviour
     {
         if (gone) return;
 
+        if (calm > 0f) calm -= Time.deltaTime;
+
         if (hitFlash > 0f)
         {
             hitFlash -= Time.deltaTime;
@@ -74,7 +78,7 @@ public class Civilian : MonoBehaviour
     // Scared: run along the roads to the closest exit the alien isn't blocking
     public void Alert()
     {
-        if (alerted || gone || holdsPosition) return;
+        if (alerted || gone || holdsPosition || IsCalm) return;
         alerted = true;
         PickRoute();
     }
@@ -98,13 +102,28 @@ public class Civilian : MonoBehaviour
             PickRoute();
     }
 
+    // Calm Hum: stop panicking for a while. Runners stop and settle where they are
+    // (that becomes their new home, so they never walk through buildings to get back).
+    public void CalmDown(float seconds)
+    {
+        if (gone) return;
+        calm = Mathf.Max(calm, seconds);
+        if (!alerted) return;
+        alerted = false;
+        route.Clear();
+        exit = -1;
+        home = transform.position;
+        target = home;
+        waitTimer = 0.5f;
+    }
+
     // Everyone within radius of a point gets scared (used by the lookouts' alarm)
     public static int AlertAround(Vector2 point, float radius)
     {
         int count = 0;
         foreach (Civilian c in All.ToArray())
         {
-            if (c.alerted || c.gone || c.holdsPosition) continue;
+            if (c.alerted || c.gone || c.holdsPosition || c.IsCalm) continue;
             if (Vector2.Distance(c.transform.position, point) > radius) continue;
             c.Alert();
             count++;
