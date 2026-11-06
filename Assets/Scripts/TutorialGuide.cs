@@ -5,7 +5,7 @@ using UnityEngine;
 // Later levels get a few short hints about what's new.
 public class TutorialGuide : MonoBehaviour
 {
-    enum Step { Move, Beam, Exits, Lookouts, Goal, Done, NewSkill, Police, Goal2, Done2 }
+    enum Step { Move, Beam, Exits, Lookouts, Goal, Done, Intro, NewSkill, Police, Goal2, Done2 }
 
     public int level = 1;
 
@@ -18,7 +18,7 @@ public class TutorialGuide : MonoBehaviour
 
     void Start()
     {
-        if (level >= 2) step = Step.NewSkill;
+        if (level >= 2) step = Step.Intro;
         alien = FindFirstObjectByType<AlienPlayer>();
         lookouts = FindObjectsByType<TownLookout>(FindObjectsSortMode.None);
     }
@@ -45,6 +45,9 @@ public class TutorialGuide : MonoBehaviour
                 break;
             case Step.Goal:
                 if (stepTime > 5f) Next();
+                break;
+            case Step.Intro:
+                if (stepTime > 4f) Next();
                 break;
             case Step.NewSkill:
                 if (stepTime > 10f || !alien.skills[1].Ready) Next();
@@ -81,8 +84,9 @@ public class TutorialGuide : MonoBehaviour
             case Step.Exits: return "Scared people run for the exits";
             case Step.Lookouts: return "Yellow circle = lookout. Beam them first!";
             case Step.Goal: return "Befriend 10 people to evolve";
-            case Step.NewSkill: return "New skill! Press  J  for your " + alien.skills[1].name;
-            case Step.Police: return "Police take 3 hits and blow whistles";
+            case Step.Intro: return "Fort Maple. The army is on alert tonight";
+            case Step.NewSkill: return "New skill: press  J  for " + alien.skills[1].name;
+            case Step.Police: return "Police and soldiers take 3 hits and raise the alarm";
             case Step.Goal2: return "Befriend " + LevelManager.Instance.friendsNeeded + " people to evolve";
         }
         return null;
@@ -96,6 +100,11 @@ public class TutorialGuide : MonoBehaviour
 
         // Fade each line in
         float a = Mathf.Clamp01(stepTime * 3f);
-        Hud.Text(new Rect(0, 18f * Hud.Scale, Screen.width, 30f * Hud.Scale), text, 20, new Color(1f, 1f, 1f, a), TextAnchor.MiddleCenter, true);
+        float k = Hud.Scale;
+        // Speech bubble behind the tip so it reads over any part of the map
+        float w = Hud.TextWidth(text, 18) + 48f * k, h = 46f * k;
+        Rect bubble = new Rect((Screen.width - w) / 2f, 12f * k, w, h);
+        Hud.Bubble(bubble, a);
+        PixelFont.Draw(bubble, text, PixelFont.PixelSize(18), new Color(0.17f, 0.12f, 0.17f, a), TextAnchor.MiddleCenter, false);
     }
 }

@@ -226,7 +226,7 @@ public class Civilian : MonoBehaviour
             p.transform.SetParent(transform, false);
             p.transform.localPosition = new Vector3((i - (toughness - 1) / 2f) * 0.22f - 0.08f, 0.7f, 0f);
             p.transform.localScale = new Vector3(0.16f, 0.16f, 1f);
-            SpriteRenderer s = p.AddComponent<SpriteRenderer>();
+            SpriteRenderer s = p.AddComponent<SpriteRenderer>(); Glow.Unlit(s);
             s.sprite = BeamEffect.Pixel;
             s.sortingOrder = 30000;
             pips[i] = s;
@@ -257,7 +257,7 @@ public class Civilian : MonoBehaviour
             GameObject heart = new GameObject("Heart");
             heart.transform.SetParent(transform, false);
             heart.transform.localPosition = new Vector3(0f, 0.8f, 0f);
-            SpriteRenderer hs = heart.AddComponent<SpriteRenderer>();
+            SpriteRenderer hs = heart.AddComponent<SpriteRenderer>(); Glow.Unlit(hs);
             hs.sprite = heartSprite;
             hs.sortingOrder = 30000;
         }

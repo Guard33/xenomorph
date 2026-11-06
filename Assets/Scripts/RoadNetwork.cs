@@ -44,7 +44,7 @@ public static class RoadNetwork
 
     static bool IsRoad(int x, int y) => Map.Paths[y][x] != '.';
 
-    public static bool BlocksWalking(string kind) => kind == "building" || kind == "tree" || kind == "vehicle" || kind == "fence";
+    public static bool BlocksWalking(string kind) => kind == "building" || kind == "tree" || kind == "vehicle" || kind == "fence" || kind == "lamp";
 
     static readonly Vector2Int[] Dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
 

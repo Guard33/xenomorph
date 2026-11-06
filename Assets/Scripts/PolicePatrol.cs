@@ -101,11 +101,11 @@ public class PolicePatrol : MonoBehaviour
         GameObject pulse = new GameObject("Whistle Pulse");
         pulse.transform.position = transform.position;
         pulse.transform.localScale = Vector3.one * whistleRadius * 2f;
-        SpriteRenderer p = pulse.AddComponent<SpriteRenderer>();
+        SpriteRenderer p = pulse.AddComponent<SpriteRenderer>(); Glow.Unlit(p);
         p.sprite = TownLookout.CircleSprite();
         p.sortingOrder = -1440;
         BeamEffect.FadeOut(p, new Color(0.4f, 0.65f, 1f, 0.4f), 0.6f);
 
-        if (LevelManager.Instance != null) LevelManager.Instance.Flash("Police whistle!");
+        if (LevelManager.Instance != null) LevelManager.Instance.Flash(name.StartsWith("Soldier") ? "A soldier sounded the alarm!" : "Police whistle!");
     }
 }

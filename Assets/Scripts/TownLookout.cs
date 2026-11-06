@@ -78,7 +78,7 @@ public class TownLookout : MonoBehaviour
         GameObject pulse = new GameObject("Alarm Pulse");
         pulse.transform.position = transform.position;
         pulse.transform.localScale = Vector3.one * alarmRadius * 2f;
-        SpriteRenderer sr = pulse.AddComponent<SpriteRenderer>();
+        SpriteRenderer sr = pulse.AddComponent<SpriteRenderer>(); Glow.Unlit(sr);
         sr.sprite = CircleSprite();
         sr.sortingOrder = -1440;
         BeamEffect.FadeOut(sr, new Color(1f, 0.25f, 0.2f, 0.45f), 0.6f);
@@ -99,7 +99,7 @@ public class TownLookout : MonoBehaviour
         GameObject go = new GameObject("Watch Circle");
         go.transform.SetParent(parent, false);
         go.transform.localScale = Vector3.one * radius * 2f;
-        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+        SpriteRenderer sr = go.AddComponent<SpriteRenderer>(); Glow.Unlit(sr);
         sr.sprite = CircleSprite();
         sr.sortingOrder = -1450;
         return sr;

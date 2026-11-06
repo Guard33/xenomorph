@@ -186,13 +186,20 @@ public class LevelManager : MonoBehaviour
         // Top-left: friends and escaped
         // Before the meter is full the goal is 10; after that it's the whole town
         int goal = won ? totalPeople : friendsNeeded;
-        Hud.Text(new Rect(14f * k, 12f * k, 400f * k, 20f * k), "Friends " + friends + "/" + goal, 15, Color.white, TextAnchor.MiddleLeft);
-        Hud.Text(new Rect(14f * k, 36f * k, 400f * k, 20f * k), "Escaped " + escaped, 15, escaped > 0 ? new Color(1f, 0.6f, 0.55f) : new Color(1f, 1f, 1f, 0.75f), TextAnchor.MiddleLeft);
+        string friendsLine = "Friends " + friends + "/" + goal, escapedLine = "Escaped " + escaped;
+        bool showHp = alien != null && alienCanDie;
+        // Wooden board behind the stats so they stand out from the map
+        float tx = 24f * k;
+        float boardW = Mathf.Max(Hud.TextWidth(friendsLine, 15), Hud.TextWidth(escapedLine, 15)) + 32f * k;
+        if (showHp) boardW = Mathf.Max(boardW, alien.maxHp * 5 * u + 22f * k);
+        Hud.Board(new Rect(10f * k, 8f * k, boardW, (showHp ? 86f : 68f) * k));
+        Hud.Text(new Rect(tx, 16f * k, 400f * k, 20f * k), friendsLine, 15, Color.white, TextAnchor.MiddleLeft);
+        Hud.Text(new Rect(tx, 40f * k, 400f * k, 20f * k), escapedLine, 15, escaped > 0 ? new Color(1f, 0.62f, 0.55f) : new Color(1f, 0.93f, 0.8f), TextAnchor.MiddleLeft);
 
         // HP under the score, only when it matters
-        if (alien != null && alienCanDie)
+        if (showHp)
             for (int i = 0; i < alien.maxHp; i++)
-                Hud.Fill(new Rect(14f * k + i * 5 * u, 62f * k, 4 * u, 4 * u), i < alien.Hp ? new Color(0.95f, 0.3f, 0.35f) : new Color(1f, 1f, 1f, 0.25f));
+                Hud.Fill(new Rect(tx + i * 5 * u, 64f * k, 4 * u, 4 * u), i < alien.Hp ? new Color(0.95f, 0.3f, 0.35f) : new Color(0f, 0f, 0f, 0.35f));
 
         // Bottom-left: friendship meter (pixel bar)
         float bw = 70 * u, bh = 4 * u;

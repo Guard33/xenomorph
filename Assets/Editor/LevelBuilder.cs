@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.Tilemaps;
 
 // Menu: Alien Game > Build Level 1 / Build Level 2
@@ -16,7 +17,7 @@ public static class LevelBuilder
 
     // Sprites placed on the map; looked up in this order
     static readonly string[] PieceFolders = { "Assets/Art/Level1Pieces", "Assets/Art/Level2Pieces", "Assets/Art/Military" };
-    static readonly string[] CenterPivot = { "grass", "water", "path_", "bridge", "folk_", "alien", "heart", "exit_marker", "ground_" };
+    static readonly string[] CenterPivot = { "grass", "water", "path_", "bridge", "folk_", "alien", "heart", "exit_marker", "ground_", "road_" };
 
     [MenuItem("Alien Game/Build Level 1")]
     public static void Build() => BuildLevel(1);
@@ -122,7 +123,7 @@ public static class LevelBuilder
         if (!AssetDatabase.IsValidFolder(TileFolder)) AssetDatabase.CreateFolder("Assets/Tiles", "Level1");
 
         List<string> names = new List<string> { "grass", "grass_tuft", "water", "water_wave", "bridge", "ground_concrete", "ground_dirt", "ground_dirt_speckled" };
-        for (int m = 0; m < 16; m++) names.Add("path_" + m.ToString("00"));
+        for (int m = 0; m < 16; m++) { names.Add("path_" + m.ToString("00")); names.Add("road_" + m.ToString("00")); }
 
         Dictionary<string, TileBase> tiles = new Dictionary<string, TileBase>();
         foreach (string n in names)
@@ -192,11 +193,12 @@ public static class LevelBuilder
         foreach (Obj o in map.Objects)
         {
             string groupName = o.kind == "building" ? "Buildings" : o.kind == "field" ? "Fields" : o.kind == "tree" ? "Trees"
-                             : o.kind == "deco" ? "Decorations" : o.kind == "vehicle" ? "Vehicles" : o.kind == "fence" ? "Fences" : "UFO";
+                             : o.kind == "deco" ? "Decorations" : o.kind == "vehicle" ? "Vehicles" : o.kind == "fence" ? "Fences" : o.kind == "lamp" ? "Lamps" : "UFO";
             GameObject go = new GameObject(o.sprite, typeof(SpriteRenderer));
             go.transform.SetParent(Group(groupName));
             float bottom = H - (o.y + o.h);
             go.transform.position = new Vector3(o.x, bottom, 0f);
+            go.transform.localScale = Vector3.one * o.Scale;
             SpriteRenderer sr = go.GetComponent<SpriteRenderer>();
             sr.sprite = Piece(o.sprite);
             sr.sortingOrder = o.kind == "field" ? -1500 : (o.kind == "deco" || o.sprite == "fountain_square") ? -1400 : Mathf.RoundToInt(-bottom * 10f);
@@ -229,9 +231,36 @@ public static class LevelBuilder
                 c.offset = new Vector2(0.5f, 0.35f);
                 c.radius = 0.28f;
             }
+            else if (o.kind == "lamp")
+            {
+                CircleCollider2D c = go.AddComponent<CircleCollider2D>();
+                c.offset = new Vector2(0.5f, 0.15f);
+                c.radius = 0.2f;
+                if (map.Night)
+                {
+                    bool flood = o.sprite == "flood_light";
+                    // light at the lamp head (street lamp head is ~1.65 tiles up, floodlight ~2.3)
+                    AddLight(Group("Lights"), o.sprite, new Vector2(o.x + 0.5f, bottom + (flood ? 2.3f : 1.65f)),
+                             flood ? new Color(0.85f, 0.92f, 1f) : new Color(1f, 0.78f, 0.45f),
+                             flood ? 0.75f : 0.7f, flood ? 4.6f : 3f, 0.35f);
+                }
+            }
             else if (o.kind == "ufo")
             {
                 go.name = "UFO (start)";
+                if (map.Night) AddLight(Group("Lights"), "UFO glow", new Vector2(o.x + o.w / 2f, bottom + o.h / 2f), new Color(0.55f, 1f, 0.75f), 0.7f, 3.5f, 0.5f);
+            }
+            if (map.Night && o.sprite.StartsWith("guard_hut"))
+            {
+                // Searchlights on the gate huts: south gate looks at the town, north gate looks out
+                Vector2 top = new Vector2(o.x + o.w / 2f, bottom + o.h * 0.8f);
+                Light2D spot = AddLight(Group("Lights"), "Searchlight", top, new Color(0.9f, 0.95f, 1f), 0.9f, 11f, 1f);
+                spot.pointLightInnerAngle = 8f;
+                spot.pointLightOuterAngle = 26f;
+                Searchlight sweep = spot.gameObject.AddComponent<Searchlight>();
+                sweep.facing = o.y > H / 2 ? -90f : 90f;
+                sweep.phase = o.x * 0.1f;
+                spot.transform.rotation = Quaternion.Euler(0f, 0f, sweep.facing - 90f);
             }
         }
 
@@ -267,6 +296,8 @@ public static class LevelBuilder
         body.offset = new Vector2(0f, -0.2f);
         alien.AddComponent<AlienPlayer>();
         alien.AddComponent<SortByY>();
+        if (map.Night)
+            AddLight(alien.transform, "Alien glow", Vector2.zero, new Color(0.55f, 1f, 0.6f), 0.55f, 2.6f, 0.3f).transform.localPosition = Vector3.zero;
 
         // --- people
         Transform people = Group("Civilians");
@@ -274,7 +305,7 @@ public static class LevelBuilder
         int i = 1;
         foreach (Civ c in map.Civilians)
         {
-            string label = c.IsPolice ? "Police " : c.lookout ? "Lookout " : "Civilian ";
+            string label = c.IsPolice ? (c.sprite == "folk_soldier" ? "Soldier " : "Police ") : c.lookout ? "Lookout " : "Civilian ";
             GameObject civ = new GameObject(label + i++ + " (" + c.sprite.Substring(5) + ")", typeof(SpriteRenderer));
             civ.transform.SetParent(people);
             civ.transform.position = RoadNetwork.TileCenter(new Vector2Int(c.x, c.y));
@@ -308,7 +339,7 @@ public static class LevelBuilder
         {
             cam.orthographic = true;
             cam.orthographicSize = 7f;
-            cam.backgroundColor = new Color(0.16f, 0.27f, 0.12f);
+            cam.backgroundColor = map.Night ? new Color(0.04f, 0.06f, 0.1f) : new Color(0.16f, 0.27f, 0.12f);
             cam.transform.position = new Vector3(alien.transform.position.x, alien.transform.position.y, -10f);
             CameraFollow follow = cam.GetComponent<CameraFollow>();
             if (follow == null) follow = cam.gameObject.AddComponent<CameraFollow>();
@@ -316,6 +347,8 @@ public static class LevelBuilder
             follow.minBounds = Vector2.zero;
             follow.maxBounds = new Vector2(W, H);
         }
+
+        SetupLighting(map);
 
         var scene = EditorSceneManager.GetActiveScene();
         EditorSceneManager.MarkSceneDirty(scene);
@@ -333,6 +366,57 @@ public static class LevelBuilder
         SceneView.lastActiveSceneView?.FrameSelected();
     }
 
+    // ------------------------------------------------------------------ lighting
+    // Night levels: a dim blue sky light, plus the lamps / floodlights / searchlights made above.
+    static void SetupLighting(LevelMap map)
+    {
+        MakeUnlitMaterial();
+        foreach (Light2D l in Object.FindObjectsByType<Light2D>(FindObjectsSortMode.None))
+        {
+            if (l.lightType != Light2D.LightType.Global) continue;
+            l.color = map.Night ? new Color(0.4f, 0.47f, 0.88f) : Color.white;
+            l.intensity = map.Night ? 0.5f : 1f;
+            l.gameObject.name = map.Night ? "Night Sky (Global Light 2D)" : "Global Light 2D";
+        }
+    }
+
+    static Light2D AddLight(Transform parent, string name, Vector2 pos, Color color, float intensity, float radius, float inner)
+    {
+        GameObject go = new GameObject(name + " light");
+        go.transform.SetParent(parent, false);
+        go.transform.position = pos;
+        Light2D l = go.AddComponent<Light2D>();
+        l.lightType = Light2D.LightType.Point;
+        l.color = color;
+        l.intensity = intensity;
+        l.pointLightOuterRadius = radius;
+        l.pointLightInnerRadius = inner;
+        l.falloffIntensity = 0.7f;
+        // light every sorting layer (new lights may start with none)
+        SerializedObject so = new SerializedObject(l);
+        SerializedProperty layers = so.FindProperty("m_ApplyToSortingLayers");
+        if (layers != null)
+        {
+            SortingLayer[] all = SortingLayer.layers;
+            layers.arraySize = all.Length;
+            for (int i = 0; i < all.Length; i++) layers.GetArrayElementAtIndex(i).intValue = all[i].id;
+            so.ApplyModifiedPropertiesWithoutUndo();
+        }
+        return l;
+    }
+
+    // Assets/Resources/SpriteUnlit.mat: used by Glow.Unlit for beams, pulses and watch circles
+    static void MakeUnlitMaterial()
+    {
+        const string path = "Assets/Resources/SpriteUnlit.mat";
+        if (AssetDatabase.LoadAssetAtPath<Material>(path) != null) return;
+        Shader sh = Shader.Find("Universal Render Pipeline/2D/Sprite-Unlit-Default");
+        if (sh == null) { Debug.LogWarning("Sprite-Unlit-Default shader not found"); return; }
+        if (!AssetDatabase.IsValidFolder("Assets/Resources")) AssetDatabase.CreateFolder("Assets", "Resources");
+        AssetDatabase.CreateAsset(new Material(sh), path);
+        AssetDatabase.SaveAssets();
+    }
+
     static void PaintTiles(LevelMap map, Tilemap ground, Tilemap paths, Tilemap water, Dictionary<string, TileBase> tiles)
     {
         int W = map.Width, H = map.Height;
@@ -348,7 +432,7 @@ public static class LevelBuilder
                              : g == 'c' ? "ground_concrete" : g == 'd' ? "ground_dirt" : g == 's' ? "ground_dirt_speckled" : "grass";
                 ground.SetTile(cell, tiles[gName]);
                 if (p == '#') paths.SetTile(cell, tiles["bridge"]);
-                else if (p != '.') paths.SetTile(cell, tiles["path_" + System.Convert.ToInt32(p.ToString(), 16).ToString("00")]);
+                else if (p != '.') paths.SetTile(cell, tiles[map.RoadTiles + System.Convert.ToInt32(p.ToString(), 16).ToString("00")]);
                 if ((g == '~' || g == '=') && p != '#') water.SetTile(cell, tiles["water_block"]);
             }
         }

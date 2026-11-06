@@ -161,7 +161,7 @@ public class AlienPlayer : MonoBehaviour
         GameObject pulse = new GameObject("Calm Hum");
         pulse.transform.position = transform.position;
         pulse.transform.localScale = Vector3.one * radius * 2f;
-        SpriteRenderer p = pulse.AddComponent<SpriteRenderer>();
+        SpriteRenderer p = pulse.AddComponent<SpriteRenderer>(); Glow.Unlit(p);
         p.sprite = TownLookout.CircleSprite();
         p.sortingOrder = -1440;
         BeamEffect.FadeOut(p, new Color(0.45f, 0.7f, 1f, 0.45f), 0.8f);

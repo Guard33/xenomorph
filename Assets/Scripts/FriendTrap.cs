@@ -35,7 +35,7 @@ public class FriendTrap : MonoBehaviour
         GameObject go = new GameObject(name);
         go.transform.SetParent(transform, false);
         go.transform.localScale = Vector3.one * size;
-        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
+        SpriteRenderer sr = go.AddComponent<SpriteRenderer>(); Glow.Unlit(sr);
         sr.sprite = TownLookout.CircleSprite();
         sr.sortingOrder = order;
         return sr;
@@ -68,7 +68,7 @@ public class FriendTrap : MonoBehaviour
         GameObject pulse = new GameObject("Trap Pulse");
         pulse.transform.position = transform.position;
         pulse.transform.localScale = Vector3.one * effectRadius * 2f;
-        SpriteRenderer p = pulse.AddComponent<SpriteRenderer>();
+        SpriteRenderer p = pulse.AddComponent<SpriteRenderer>(); Glow.Unlit(p);
         p.sprite = TownLookout.CircleSprite();
         p.sortingOrder = -1440;
         BeamEffect.FadeOut(p, new Color(0.96f, 0.45f, 0.68f, 0.5f), 0.6f);

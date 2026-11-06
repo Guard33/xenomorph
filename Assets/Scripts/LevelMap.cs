@@ -18,6 +18,8 @@ public class LevelMap
     public Vector2Int[] Exits;
     public Vector2Int[][] Patrols = new Vector2Int[0][];   // police patrol routes (tiles)
     public int FriendsNeeded = 10;
+    public bool Night;                     // dark sky, lamps and floodlights light the map
+    public string RoadTiles = "path_";     // road pieces: "path_" dirt (Level 1) or "road_" asphalt
 
     static LevelMap current;
 
@@ -32,11 +34,13 @@ public class LevelMap
 }
 
 // An object on the map. x, y = top-left tile; w, h = size in tiles.
-// kind: building, field, tree, deco, ufo, vehicle, fence
+// kind: building, field, tree, deco, ufo, vehicle, fence, lamp
+// scale: how big the sprite is drawn (Talia's military sprites are drawn at 2x)
 public struct Obj
 {
-    public string sprite, kind; public int x, y, w, h;
-    public Obj(string s, int x, int y, int w, int h, string k) { sprite = s; this.x = x; this.y = y; this.w = w; this.h = h; kind = k; }
+    public string sprite, kind; public int x, y, w, h; public float scale;
+    public Obj(string s, int x, int y, int w, int h, string k, float scale = 1f) { sprite = s; this.x = x; this.y = y; this.w = w; this.h = h; kind = k; this.scale = scale; }
+    public float Scale => scale > 0f ? scale : 1f;
 }
 
 // A person on the map. lookout = raises the alarm instead of running.

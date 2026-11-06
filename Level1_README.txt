@@ -32,11 +32,18 @@ What is in the level
     LevelManager.alienCanDie turns death on for later levels.
 
 
-LEVEL 2 - "FORT MAPLE"
+LEVEL 2 - "FORT MAPLE" (night)
   Scene:   Assets/Scenes/Level2.unity (menu Alien Game > Build Level 2)
   Layout:  Tools/level2_design.py writes Assets/Scripts/Level2Data.cs - edit the layout there and run it
-  - 48 x 30 map: a fenced army base (Talia's military sprites) next to a small town, farmland, UFO field
-  - 30 people (18 townspeople, 2 lookouts, 6 base staff, 4 police), 2 exits (west road, base north gate)
+  Art:     Tools/make_level2_art.py makes the street lamp, floodlight, soldier and asphalt road sprites
+  - 62 x 32 map: a fenced army base (Talia's military sprites, drawn at 2x) next to a small town,
+    farmland, UFO field
+  - Night: dim blue sky light, street lamps in town, floodlights on the base, two sweeping
+    searchlights on the gate huts (URP 2D lights, made by the builder)
+  - 30 people (18 townspeople, 2 lookouts, 6 base staff, 1 police officer, 3 soldiers), 2 exits
+    (west road, base north gate)
+  - Patrols: the police officer walks from town up through the south gate; the soldiers walk the
+    base road, the north gate road and the outside of the west fence. They need 3 hits and raise
+    the alarm (scares everyone nearby) if the alien gets inside their circle
   - Befriend 15 to fill the meter; the level ends when nobody is left
-  - Police patrol the streets, need 3 hits, and blow a whistle that scares everyone nearby
   - Played after Level 1 + the Evolve screen. Pressing Play in Level2.unity directly gives J = Wide Wave

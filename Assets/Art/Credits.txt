@@ -15,5 +15,10 @@ Art/Military:
   Military base sprites (buildings, vehicles, yard tiles, fences) for Level 2,
   cut from one sheet (military.png). Made by Talia (team member).
 
+Art/Level2Pieces:
+  folk_police, folk_soldier, folk_noble-lady, folk_king: recoloured Town Folk sprites.
+  street_lamp, flood_light and road_00-15 (asphalt) were made for the Level 2 night
+  by Tools/make_level2_art.py (the roads reuse the shapes of the Level 1 dirt roads).
+
 Art/Alien:
   alien_idle_0/1 - green slime alien (2-frame idle bounce). Author: TO CONFIRM.
