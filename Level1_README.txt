@@ -3,6 +3,8 @@ XENOMORPH - LEVEL 1 "QUIET FARM TOWN" (tutorial)
 Open the xenomite folder in Unity with our team version (Unity 6000.6.3f1).
 
 Play:    open Assets/Scenes/StartScreen.unity, press Play, then ENTER
+         Stage select (button on the start screen, or Tab): jump to any built level and pick
+         the skills the alien would have evolved by then
 Scene:   Assets/Scenes/Level1.unity
 Rebuild: menu Alien Game > Build Level 1 (rebuilds the scene from Assets/Scripts/Level1Data.cs)
          The builder is Assets/Editor/LevelBuilder.cs (Build Level 2 makes Level 2 the same way).
