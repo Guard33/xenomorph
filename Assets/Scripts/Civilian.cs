@@ -14,6 +14,7 @@ public class Civilian : MonoBehaviour
     public float runSpeed = 2.2f;      // faster once alerted (from our outline)
     public float wanderRadius = 1f;
     public float alertRadius = 2.5f;
+    public AudioClip friendshipNoise;
     public Sprite heartSprite;
     public bool holdsPosition;         // lookouts and police don't run away
     public int toughness = 1;          // beam hits needed to befriend (police: 3)
@@ -246,6 +247,8 @@ public class Civilian : MonoBehaviour
         if (gone) return;
         gone = true;
         if (LevelManager.Instance != null) LevelManager.Instance.PersonBefriended();
+        if (friendshipNoise != null)
+            AudioSource.PlayClipAtPoint(friendshipNoise, transform.position);
         StartCoroutine(BeamUpToUfo());
     }
 

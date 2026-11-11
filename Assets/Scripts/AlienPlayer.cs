@@ -31,16 +31,19 @@ public class AlienPlayer : MonoBehaviour
     [Header("Small Beam")]
     public float beamRange = 3.5f;      // tiles
     public float beamWidth = 0.9f;      // tiles
-
+    public AudioSource beamAudio;
     public int Hp { get; private set; }
     public bool IsDead => Hp <= 0;
     public Vector2 Facing { get; private set; } = Vector2.down;
     public float DistanceMoved { get; private set; }
 
+    public AudioSource walkingAudio;
+
     private Rigidbody2D rb;
     private SpriteRenderer sr;
     private Vector2 input;
     private float hurtFlash;
+
 
     void Awake()
     {
@@ -103,6 +106,16 @@ public class AlienPlayer : MonoBehaviour
         float rate = input.sqrMagnitude > 0.01f ? acceleration : deceleration;
         rb.linearVelocity = Vector2.MoveTowards(rb.linearVelocity, target, rate * Time.fixedDeltaTime);
         DistanceMoved += rb.linearVelocity.magnitude * Time.fixedDeltaTime;
+        if (rb.linearVelocity.magnitude > 0.1f)
+        {
+            if (walkingAudio != null && !walkingAudio.isPlaying)
+                walkingAudio.Play();
+        }
+        else
+        {
+            if (walkingAudio != null && walkingAudio.isPlaying)
+                walkingAudio.Stop();
+        }
     }
 
     // ------------------------------------------------------------------ skills
@@ -127,6 +140,8 @@ public class AlienPlayer : MonoBehaviour
     // The closest person inside the beam is hit (most people are befriended at once).
     public Civilian FireSmallBeam()
     {
+        if (beamAudio != null)
+            beamAudio.Play();
         Vector2 origin = transform.position;
         BeamEffect.Spawn(origin, Facing, beamRange, beamWidth, new Color(0.45f, 1f, 0.55f, 0.85f));
         Civilian hit = FirstInLine(origin, Facing, beamRange, beamWidth);
