@@ -2,7 +2,9 @@ ART CREDITS (put these in the game credits)
 
 - Tiny Tile Town by Aleksandr Makarov (@IknowKingRabbit)
   Free to use and change. The license asks that he is credited in the game credits,
-  and that the asset pack is not uploaded publicly on its own (keep the GitHub repo private).
+  and that the asset pack is not hosted publicly except as part of a game. So the repo only
+  keeps the pieces the game uses (Art/Level1Pieces); the original pack is not included.
+  Get the full pack from the author if you need more pieces.
 
 - Town Folk Sprites by freezepops (itch.io) - CC0 (public domain, no credit needed).
 

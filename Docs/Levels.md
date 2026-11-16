@@ -1,0 +1,56 @@
+# Levels
+
+How the levels are built and what is in each one.
+
+## How levels are made
+
+Levels are generated, not hand-edited. Each level's map (ground, roads, objects, people, exits, patrol routes) is a data file, and an editor script builds the scene from it.
+
+| | Level 1 | Level 2 |
+|---|---|---|
+| Map data | `Assets/Scripts/Level1Data.cs` | `Assets/Scripts/Level2Data.cs` (written by `Tools/level2_design.py`) |
+| Scene | `Assets/Scenes/Level1.unity` | `Assets/Scenes/Level2.unity` |
+| Rebuild | menu **Alien Game > Build Level 1** | menu **Alien Game > Build Level 2** |
+
+- The builder is `Assets/Editor/LevelBuilder.cs`. Rebuilding overwrites the scene, so change the data file, not the scene.
+- `Tools/level2_design.py` checks the Level 2 layout (no overlaps, nothing on roads or water, everyone can reach an exit, patrol routes on open ground), prints a text map and writes `Level2Data.cs`:
+  ```
+  python Tools/level2_design.py Assets/Scripts/Level2Data.cs
+  ```
+- `Tools/make_level2_art.py` makes the Level 2 street lamp, floodlight, soldier and asphalt road sprites.
+
+To play: open `Assets/Scenes/StartScreen.unity`, press Play, then Enter. **Stage select** (button on the start screen, or Tab) jumps to any built level and lets you pick the skills the alien would have evolved by then.
+
+## Level 1: Quiet Farm Town (tutorial)
+
+- 40 x 26 tile farm town. The alien starts at its UFO in the corn field.
+- 5-step tutorial at the top of the screen: move, beam, exits, lookouts, goal.
+- 18 townspeople walk around. When the alien gets close they run along the roads to an exit, and they avoid an exit the alien is guarding.
+- 2 lookouts (Town Crier, Mayor) with a yellow watch circle. Stay in it about a second and they ring the alarm: everyone within 7 tiles runs. Beam them first.
+- 2 exits: the east bridge and the south road.
+- Befriend 10 (100 EXP) to fill the meter. If 11 escape, it's game over. The level ends when nobody is left.
+- The alien has 5 HP but can't die in the tutorial (`LevelManager.alienCanDie`).
+
+## Level 2: Fort Maple (night)
+
+- 62 x 32 map. A UFO crash-lands in a farmer's corn field outside a small town next to an army base. Every area has a job (the story is at the top of `Tools/level2_design.py`):
+  - **Crash farm** (start, south-east): farmhouse, barn, pasture, three people nearby.
+  - **Town** (west): main street shops, church, police station, and the fountain square that both lookouts watch. Exit A is the road west out of town.
+  - **Town farm** (north-west) on the farm lane, and the **Maple woods** behind town, which give cover up to the base fence.
+  - **Army base** (north-east, Talia's military sprites drawn at 2x): main gate and barracks, HQ with a floodlit parade ground, airfield, supply depot and motor pool by the rear gate (Exit B), ammo dump.
+- Night lighting (URP 2D lights): dim blue sky, street lamps, base floodlights, two sweeping searchlights.
+- 30 people: 18 townspeople, 2 lookouts, 6 base staff, 1 police officer and 3 soldiers.
+- Police and soldiers patrol around the base, take 3 hits, and raise the alarm if the alien gets inside their circle.
+- Befriend 15 to fill the meter.
+- Played after Level 1 and the Evolve screen. Pressing Play in `Level2.unity` directly gives J = Wide Wave.
+
+## Controls
+
+| Key | Action |
+|---|---|
+| W A S D | move |
+| H | Small Beam: befriends the first person in front of the alien |
+| J | skill picked on the Evolve screen (Wide Wave, Calm Hum or Friend Trap) |
+| K L | later skills (locked) |
+| M | show / hide the mini map |
+| R | restart the level |
