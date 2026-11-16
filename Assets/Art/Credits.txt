@@ -1,5 +1,7 @@
 ART CREDITS (put these in the game credits)
 
+All assets were found or made by Talia (team member).
+
 - Tiny Tile Town by Aleksandr Makarov (@IknowKingRabbit)
   Free to use and change. The license asks that he is credited in the game credits,
   and that the asset pack is not hosted publicly except as part of a game. So the repo only
@@ -23,4 +25,4 @@ Art/Level2Pieces:
   by Tools/make_level2_art.py (the roads reuse the shapes of the Level 1 dirt roads).
 
 Art/Alien:
-  alien_idle_0/1 - green slime alien (2-frame idle bounce). Author: TO CONFIRM.
+  alien_idle_0/1 - green slime alien (2-frame idle bounce). Found by Talia.
