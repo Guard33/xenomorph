@@ -6,8 +6,8 @@ Short version: **pull → make a branch → work → commit → push → pull re
 
 1. Install **Unity 6000.6.3f1** through Unity Hub (Installs → Install Editor → Archive tab if it's not listed). Only this version, nothing newer.
 2. Install [Git LFS](https://git-lfs.com) and run `git lfs install` once.
-3. Clone the repo. Easiest is [GitHub Desktop](https://desktop.github.com): File → Clone repository → `Guard33/xenomite`.
-4. Unity Hub → Add → Add project from disk → pick the cloned `xenomite` folder.
+3. Clone the repo. Easiest is [GitHub Desktop](https://desktop.github.com): File → Clone repository → `Guard33/xenomorph`.
+4. Unity Hub → Add → Add project from disk → pick the cloned folder.
 5. Optional, but it saves you when scenes conflict: set up Unity's merge tool. In the repo folder, run (fix the path if Unity is installed somewhere else):
 
    ```
