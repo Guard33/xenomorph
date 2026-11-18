@@ -8,6 +8,7 @@ using UnityEngine.InputSystem;
 // The level is lost if 11 or more escape (can no longer win) or the alien's HP reaches 0.
 // Once every person is either befriended or gone (and the meter is full), the level is complete.
 // Also draws the pixel-art HUD: score, friendship meter, skill keys, popups and the ending screen.
+// When a level ends, the run is saved on the Scoreboard (how many people were befriended).
 public class LevelManager : MonoBehaviour
 {
     public static LevelManager Instance { get; private set; }
@@ -79,6 +80,7 @@ public class LevelManager : MonoBehaviour
         if (complete || gameOver || !won || friends + escaped < totalPeople) return;
         complete = true;
         winPopupOpen = false;
+        Scoreboard.Record(LevelNumber, friends, totalPeople, true);   // save the run on the scoreboard
         Invoke(nameof(ShowEnding), 1.2f);   // let the last beam-up finish
     }
 
@@ -93,6 +95,8 @@ public class LevelManager : MonoBehaviour
         if (gameOver) return;
         gameOver = true;
         bigMessage = reason;
+        Scoreboard.Record(LevelNumber, friends, totalPeople, false);  // lost runs count on the scoreboard too
+        GameResult.Level = LevelNumber;
         GameResult.Reason = reason;
         GameResult.Friends = friends;
         GameResult.Escaped = escaped;
@@ -254,16 +258,17 @@ public class LevelManager : MonoBehaviour
         float W = Screen.width, H = Screen.height;
         Hud.Fill(new Rect(0, 0, W, H), new Color(0.02f, 0.03f, 0.05f, 0.7f));
 
-        float w = 520f * k, h = 300f * k;
+        float w = 520f * k, h = 330f * k;
         Rect r = new Rect((W - w) / 2f, (H - h) / 2f, w, h);
         Hud.Panel(r, PanelColor);
 
         Hud.Text(new Rect(r.x, r.y + 26f * k, w, 36f * k), "Level complete!", 28, Green);
         Hud.Text(new Rect(r.x, r.y + 84f * k, w, 20f * k), LevelMap.Current.Name + " is brainwashed", 14, Color.white);
         Hud.Text(new Rect(r.x, r.y + 120f * k, w, 20f * k), "Friends " + friends + "   Escaped " + escaped, 15, Pink);
+        DrawBest(r, k);
 
         float bh = 52f * k, gap = 18f * k;
-        float by = r.y + 172f * k;
+        float by = r.y + 200f * k;
         if (HasNextLevel)
         {
             // Evolve (or Next level on a replay) / Play again / Menu
@@ -281,6 +286,28 @@ public class LevelManager : MonoBehaviour
             if (Hud.Button(new Rect(r.x + (w - 2 * bw - gap) / 2f, by, bw, bh), "Play again")) Restart();
             if (Hud.Button(new Rect(r.x + (w + gap) / 2f, by, bw, bh), "Main menu")) MainMenu();
             Hud.Text(new Rect(r.x, r.yMax - 40f * k, w, 16f * k), "Enter = play again   Esc = menu", 11, new Color(1f, 1f, 1f, 0.45f));
+        }
+    }
+
+    // Scoreboard line on the level complete card: a new best score, or the best so far
+    void DrawBest(Rect r, float k)
+    {
+        Color gold = new Color(1f, 0.85f, 0.35f);
+        Rect line = new Rect(r.x, r.y + 152f * k, r.width, 22f * k);
+        if (Scoreboard.LastWasNewBest)
+        {
+            const string text = "New best score!";
+            Hud.Text(line, text, 15, gold);
+            // A gold star on each side
+            float half = Hud.TextWidth(text, 15) / 2f + 24f * k;
+            ScoreboardScreen.Star(new Vector2(line.center.x - half, line.center.y), Hud.Unit, gold);
+            ScoreboardScreen.Star(new Vector2(line.center.x + half, line.center.y), Hud.Unit, gold);
+        }
+        else
+        {
+            string text = "Best " + Scoreboard.Best(LevelNumber) + "/" + totalPeople;
+            if (Scoreboard.LastRank > 0) text += "   Your " + Scoreboard.Ordinal(Scoreboard.LastRank) + " best run";
+            Hud.Text(line, text, 14, gold);
         }
     }
 
