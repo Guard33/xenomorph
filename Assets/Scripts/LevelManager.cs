@@ -70,7 +70,15 @@ public class LevelManager : MonoBehaviour
 
     public void AlienDied(string reason = null)
     {
-        if (!won) Lose(reason ?? "The alien was defeated!");
+        if (!won) { Lose(reason ?? "The alien was defeated!"); return; }
+
+        // The meter was already full: the level still counts, so end it here instead of
+        // leaving a knocked-out alien on the map with nothing to do
+        if (complete || gameOver) return;
+        complete = true;
+        winPopupOpen = false;
+        Flash("The alien was knocked out, but the meter was full!", 2f);
+        Invoke(nameof(ShowEnding), 1.5f);
     }
 
     // Nobody left on the map to brainwash: end the level
