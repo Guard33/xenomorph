@@ -61,6 +61,7 @@ public class AlienPlayer : MonoBehaviour
     private SpriteRenderer sr;
     private Vector2 input;
     private float hurtFlash;
+    private float slowTimer;            // tranquilliser darts slow the alien for a moment
     private float disguiseTimer, shieldTimer;
     private SpriteFlipbook flipbook;
     private Sprite normalSprite;
@@ -148,6 +149,7 @@ public class AlienPlayer : MonoBehaviour
                 UseSkill(i);
         }
 
+        if (slowTimer > 0f) slowTimer -= Time.deltaTime;
         if (hurtFlash > 0f)
         {
             hurtFlash -= Time.deltaTime;
@@ -173,7 +175,7 @@ public class AlienPlayer : MonoBehaviour
 
     void FixedUpdate()
     {
-        Vector2 target = input * moveSpeed;
+        Vector2 target = input * moveSpeed * (slowTimer > 0f ? 0.55f : 1f);
         float rate = input.sqrMagnitude > 0.01f ? acceleration : deceleration;
         rb.linearVelocity = Vector2.MoveTowards(rb.linearVelocity, target, rate * Time.fixedDeltaTime);
         DistanceMoved += rb.linearVelocity.magnitude * Time.fixedDeltaTime;
@@ -341,6 +343,10 @@ public class AlienPlayer : MonoBehaviour
     }
 
     // ------------------------------------------------------------------ health
+    // Hit by a tranquilliser dart: slower for a moment
+    public void Tranquilize(float seconds) { slowTimer = Mathf.Max(slowTimer, seconds); }
+    public bool Slowed => slowTimer > 0f;
+
     // Returns false if the hit did nothing (already dead, or blocked by the Psi Shield)
     public bool TakeDamage(int amount, string reason = null)
     {

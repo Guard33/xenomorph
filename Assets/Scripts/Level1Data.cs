@@ -310,12 +310,12 @@ public static class Level1Data
 
     public static readonly Civ[] Civilians = {
         new Civ("folk_shopkeeper", 2, 9),
-        new Civ("folk_blacksmith", 10, 7),
+        new Civ("folk_mechanic", 10, 7),
         new Civ("folk_baker", 15, 6),
         new Civ("folk_farmer", 19, 6),
         new Civ("folk_fisherman", 14, 8),
         new Civ("folk_innkeeper", 18, 10),
-        new Civ("folk_mayor", 21, 10, true),
+        new Civ("folk_councillor", 21, 10, true),
         new Civ("folk_grandpa", 18, 13),
         new Civ("folk_grandma", 21, 13),
         new Civ("folk_merchant", 7, 10),
@@ -326,9 +326,9 @@ public static class Level1Data
         new Civ("folk_florist", 24, 13),
         new Civ("folk_bartender", 28, 14),
         new Civ("folk_painter", 24, 17),
-        new Civ("folk_herbalist", 28, 19),
-        new Civ("folk_town-crier", 13, 18, true),
-        new Civ("folk_lamplighter", 17, 22)
+        new Civ("folk_gardener", 28, 19),
+        new Civ("folk_watchman", 13, 18, true),
+        new Civ("folk_lineman", 17, 22)
     };
 
     public static readonly Vector2Int Start = new Vector2Int(5, 6);

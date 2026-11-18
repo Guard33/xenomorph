@@ -16,7 +16,7 @@ public static class LevelBuilder
     const string TemplateScene = "Assets/Scenes/SampleScene.unity";
 
     // Sprites placed on the map; looked up in this order
-    static readonly string[] PieceFolders = { "Assets/Art/Level1Pieces", "Assets/Art/Level2Pieces", "Assets/Art/Level3Pieces", "Assets/Art/Military" };
+    static readonly string[] PieceFolders = { "Assets/Art/Level1Pieces", "Assets/Art/Level2Pieces", "Assets/Art/Level3Pieces", "Assets/Art/Military", "Assets/Art/Modern" };
     static readonly string[] CenterPivot = { "grass", "water", "path_", "bridge", "folk_", "alien", "heart", "exit_marker", "ground_", "road_" };
 
     [MenuItem("Alien Game/Build Level 1")]
@@ -284,13 +284,14 @@ public static class LevelBuilder
             }
             if (map.Night && o.sprite.StartsWith("guard_hut"))
             {
-                // Searchlights on the gate huts: south gate looks at the town, north gate looks out
+                // Watchtower searchlights sweep toward the middle of the map and spot the alien
                 Vector2 top = new Vector2(o.x + o.w / 2f, bottom + o.h * 0.8f);
                 Light2D spot = AddLight(Group("Lights"), "Searchlight", top, new Color(0.9f, 0.95f, 1f), 0.9f, 11f, 1f);
                 spot.pointLightInnerAngle = 8f;
                 spot.pointLightOuterAngle = 26f;
                 Searchlight sweep = spot.gameObject.AddComponent<Searchlight>();
-                sweep.facing = o.y > H / 2 ? -90f : 90f;
+                Vector2 toMiddle = new Vector2(W / 2f, H / 2f) - top;
+                sweep.facing = Mathf.Atan2(toMiddle.y, toMiddle.x) * Mathf.Rad2Deg;
                 sweep.phase = o.x * 0.1f;
                 spot.transform.rotation = Quaternion.Euler(0f, 0f, sweep.facing - 90f);
             }
@@ -327,7 +328,7 @@ public static class LevelBuilder
         body.radius = 0.3f;
         body.offset = new Vector2(0f, -0.2f);
         AlienPlayer ap = alien.AddComponent<AlienPlayer>();
-        ap.disguiseSprite = Piece("folk_soldier");
+        ap.disguiseSprite = Piece("folk_trooper");
         ap.beamAudio = Sound(alien, "freesound_beam.wav", false, 0.3f);
         ap.walkingAudio = Sound(alien, "freesound_community-walking-on-the-muddy-road-29586.mp3", true, 0.2f);
         alien.AddComponent<SortByY>();
@@ -340,8 +341,9 @@ public static class LevelBuilder
         int i = 1;
         foreach (Civ c in map.Civilians)
         {
-            string label = c.boss ? "Boss " : c.IsPolice ? (c.sprite == "folk_soldier" ? "Soldier " : "Police ")
-                         : c.lookout ? (c.sprite == "folk_soldier" ? "Sentry " : "Lookout ") : "Civilian ";
+            bool trooper = c.sprite.StartsWith("folk_trooper");
+            string label = c.boss ? "Boss " : c.IsPolice ? (trooper ? "Soldier " : "Police ")
+                         : c.lookout ? (trooper ? "Sentry " : "Lookout ") : "Civilian ";
             GameObject civ = new GameObject(label + i++ + " (" + c.sprite.Substring(5) + ")", typeof(SpriteRenderer));
             civ.transform.SetParent(people);
             civ.transform.position = RoadNetwork.TileCenter(new Vector2Int(c.x, c.y));
@@ -353,6 +355,7 @@ public static class LevelBuilder
             {
                 script.holdsPosition = true;
                 TownLookout look = civ.AddComponent<TownLookout>();
+                look.military = trooper;   // army sentry: vision cone, base alarm, darts
                 look.alarm = Sound(civ, "freesound_alarm 1.wav", false, 0.35f);
                 look.gasp = Sound(civ, "freesound_community-gasp-7063.mp3", false, 0.4f);
             }
@@ -360,7 +363,9 @@ public static class LevelBuilder
             {
                 script.holdsPosition = true;
                 script.toughness = 3;
-                civ.AddComponent<PolicePatrol>().patrol = c.patrol;
+                PolicePatrol pp = civ.AddComponent<PolicePatrol>();
+                pp.patrol = c.patrol;
+                pp.military = trooper;     // soldier: tranquilliser rifle, base alarm
             }
             if (c.boss)
             {
@@ -379,6 +384,10 @@ public static class LevelBuilder
         lm.totalPeople = map.Civilians.Length;
         lm.friendsNeeded = map.FriendsNeeded;
         lm.alienCanDie = map.AlienCanDie;
+        // Army levels: one alarm for the whole base
+        bool army = false;
+        foreach (Civ c in map.Civilians) if (c.sprite.StartsWith("folk_trooper")) army = true;
+        if (army) lm.gameObject.AddComponent<BaseAlarm>().siren = Sound(lm.gameObject, "freesound_alarm 1.wav", false, 0.35f);
         new GameObject("Tutorial Guide").AddComponent<TutorialGuide>().level = level;
         new GameObject("Mini Map").AddComponent<MiniMap>();
 

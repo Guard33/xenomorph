@@ -100,7 +100,8 @@ public class MiniMap : MonoBehaviour
     void OnGUI()
     {
         if (!visible || mapTexture == null) return;
-        float k = Mathf.Max(0.75f, Screen.height / 1080f) * mapScale;
+        // Size from Settings (Small / Medium / Large): the map's width on a 1080p screen
+        float k = Mathf.Max(0.75f, Screen.height / 1080f) * mapScale * GameSettings.MiniMapWidth / mapTexture.width;
         float w = mapTexture.width * k, h = mapTexture.height * k;
         Rect r = new Rect(Screen.width - w - 12, 12, w, h);
         DrawRect(new Rect(r.x - 2, r.y - 2, w + 4, h + 4), new Color(0f, 0f, 0f, 0.5f));

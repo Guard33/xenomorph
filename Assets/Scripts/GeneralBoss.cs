@@ -3,7 +3,8 @@ using UnityEngine;
 // Level 3 mini boss: the General, who runs Fort Maple Command.
 // He paces the parade ground in front of HQ and never runs away. He takes 12 beam hits
 // (shown as a health bar at the top of the screen) and, unlike everyone else, he fights back:
-// when he can see the alien he fires tranquilliser darts at it (1 damage each).
+// when he can see the alien (inside his vision cone) he raises the base alarm and fires
+// tranquilliser darts at it (1 damage each).
 //   Phase 1 (full health)  one dart every 2.2 s
 //   Phase 2 (below 2/3)    sounds the base alarm, then 3-dart spreads every 1.8 s
 //   Phase 3 (below 1/3)    sounds the alarm again, faster spreads every 1.3 s
@@ -29,7 +30,7 @@ public class GeneralBoss : MonoBehaviour
     private float fireTimer = 1.5f;
     private int maxHits;
     private bool announced;
-    private SpriteRenderer circle;
+    private VisionCone cone;
     private TextMesh mark;
 
     void Awake()
@@ -53,9 +54,9 @@ public class GeneralBoss : MonoBehaviour
             for (int i = 0; i < route.Length; i++) route[i] = RoadNetwork.TileCenter(patrols[patrol][i]);
         }
 
-        // The circle and "!" are children of a 2x sprite, so undo the scale
+        // The "!" is a child of a 2x sprite, so undo the scale
         float s = Mathf.Max(0.01f, transform.localScale.x);
-        circle = TownLookout.MakeCircle(transform, sightRadius / s);
+        cone = VisionCone.Attach(transform, sightRadius, 50f, 0f);
         mark = TownLookout.MakeMark(transform);
         mark.transform.localScale = Vector3.one / s;
         mark.transform.localPosition = new Vector3(0f, 1.1f / s + 0.5f, 0f);
@@ -67,7 +68,7 @@ public class GeneralBoss : MonoBehaviour
     {
         if (!civ.CanBeBefriended)
         {
-            if (circle != null) circle.enabled = false;
+            if (cone != null) cone.Visible = false;
             if (mark != null) mark.text = "";
             if (!announced)
             {
@@ -84,15 +85,18 @@ public class GeneralBoss : MonoBehaviour
             Phase = phase;
             fireTimer = 0.8f;
             Civilian.AlertAround(transform.position, alarmRadius);
+            if (alien != null) BaseAlarm.Raise(alien.transform.position, "The General: \"Sound the alarm!\"");
             if (LevelManager.Instance != null)
                 LevelManager.Instance.Flash(Phase == 2 ? "The General: \"Sound the alarm!\"" : "The General: \"All units, stop that alien!\"", 2.5f);
         }
 
-        bool sees = alien != null && !alien.IsDead && !AlienPlayer.Disguised
-                    && Vector2.Distance(alien.transform.position, transform.position) < sightRadius;
+        bool sees = alien != null && !alien.IsDead && !AlienPlayer.Disguised && cone.Sees(alien.transform.position);
         if (sees)
         {
             Vector2 to = alien.transform.position - transform.position;
+            cone.TurnTowards(VisionCone.AngleOf(to), 400f);
+            if (!BaseAlarm.Active) BaseAlarm.Raise(alien.transform.position, "The General spotted the alien! BASE ALARM!");
+            else BaseAlarm.Spotted(alien.transform.position);
             if (sr != null && Mathf.Abs(to.x) > 0.05f) sr.flipX = to.x < 0f;
             fireTimer -= Time.deltaTime;
             if (fireTimer <= 0f)
@@ -109,7 +113,7 @@ public class GeneralBoss : MonoBehaviour
 
         mark.text = sees ? "!" : "";
         mark.color = new Color(1f, 0.35f, 0.25f);
-        circle.color = sees ? new Color(1f, 0.3f, 0.25f, 0.11f) : new Color(1f, 0.55f, 0.3f, 0.05f);
+        cone.color = sees ? new Color(1f, 0.3f, 0.25f, 0.2f) : new Color(1f, 0.6f, 0.35f, 0.12f);
     }
 
     void Fire(Vector2 aim)
@@ -117,7 +121,7 @@ public class GeneralBoss : MonoBehaviour
         float speed = 4.5f + Phase * 0.7f;
         float[] angles = Phase == 1 ? new[] { 0f } : new[] { -16f, 0f, 16f };
         foreach (float a in angles)
-            Dart.Spawn(transform.position, Quaternion.Euler(0f, 0f, a) * aim, speed);
+            Dart.Spawn(transform.position, Quaternion.Euler(0f, 0f, a) * aim, speed, "The General's darts knocked the alien out!");
         DartsFired += angles.Length;
     }
 
@@ -127,6 +131,7 @@ public class GeneralBoss : MonoBehaviour
         Vector2 target = route[next];
         if (sr != null && Mathf.Abs(target.x - transform.position.x) > 0.01f)
             sr.flipX = target.x < transform.position.x;
+        cone.TurnTowards(VisionCone.AngleOf(target - (Vector2)transform.position), 200f);
         transform.position = Vector2.MoveTowards(transform.position, target, walkSpeed * Time.deltaTime);
         if (Vector2.Distance(transform.position, target) < 0.05f)
         {
@@ -149,11 +154,12 @@ public class GeneralBoss : MonoBehaviour
     }
 }
 
-// A tranquilliser dart fired by the General. Flies straight, stops at buildings and walls,
-// and does 1 damage if it reaches the alien (unless the Psi Shield blocks it).
+// A tranquilliser dart (the General, soldiers and sentries). Flies straight, stops at buildings
+// and walls, and does 1 damage and slows the alien for a second if it hits (unless the Psi Shield blocks it).
 public class Dart : MonoBehaviour
 {
     public Vector2 velocity;
+    public string reason = "A tranquilliser dart knocked the alien out!";
     private float life = 3f;
     private AlienPlayer alien;
 
@@ -163,7 +169,7 @@ public class Dart : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void ResetCounts() { Hits = 0; Blocked = 0; }
 
-    public static Dart Spawn(Vector2 from, Vector2 dir, float speed)
+    public static Dart Spawn(Vector2 from, Vector2 dir, float speed, string reason = null)
     {
         GameObject go = new GameObject("Dart");
         go.transform.position = from + dir * 0.6f;
@@ -175,6 +181,7 @@ public class Dart : MonoBehaviour
         sr.sortingOrder = 29500;
         Dart d = go.AddComponent<Dart>();
         d.velocity = dir.normalized * speed;
+        if (reason != null) d.reason = reason;
         return d;
     }
 
@@ -191,7 +198,7 @@ public class Dart : MonoBehaviour
 
         if (alien != null && Vector2.Distance(alien.transform.position, transform.position) < 0.45f)
         {
-            if (alien.TakeDamage(1, "The General's darts knocked the alien out!")) Hits++;
+            if (alien.TakeDamage(1, reason)) { Hits++; alien.Tranquilize(1f); }
             else Blocked++;
             Destroy(gameObject);
         }

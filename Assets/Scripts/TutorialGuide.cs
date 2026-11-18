@@ -128,7 +128,7 @@ public class TutorialGuide : MonoBehaviour
             case Step.Help2: return "Tab  shows the controls.  Esc  pauses";
             case Step.Intro: return level >= 3 ? "Fort Maple Command. The General is waiting" : "Fort Maple. The army is on alert tonight";
             case Step.NewSkill: return "New skill: press  " + alien.skills[newSkill].key + "  for " + alien.skills[newSkill].name;
-            case Step.Police: return level >= 3 ? "The General shoots darts. Dodge them or hide!" : "Police and soldiers take 3 hits and raise the alarm";
+            case Step.Police: return level >= 3 ? "Searchlights and guards raise the base alarm. The General shoots too!" : "Soldiers see inside their light cones and shoot tranquilliser darts!";
             case Step.Goal2: return "Befriend " + LevelManager.Instance.friendsNeeded + " people to evolve";
         }
         return null;

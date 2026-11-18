@@ -349,7 +349,7 @@ public static class Level2Data
         new Civ("folk_tailor", 22, 21),
         new Civ("folk_baker", 3, 21),
         new Civ("folk_courier", 26, 22),
-        new Civ("folk_lamplighter", 7, 22),
+        new Civ("folk_lineman", 7, 22),
         new Civ("folk_bartender", 9, 24),
         new Civ("folk_innkeeper", 24, 26),
         new Civ("folk_grandpa", 10, 25),
@@ -357,22 +357,22 @@ public static class Level2Data
         new Civ("folk_florist", 15, 26),
         new Civ("folk_fisherman", 6, 27),
         new Civ("folk_painter", 6, 25),
-        new Civ("folk_herbalist", 4, 17),
-        new Civ("folk_town-crier", 12, 23, true),
-        new Civ("folk_mayor", 16, 23, true),
+        new Civ("folk_gardener", 4, 17),
+        new Civ("folk_watchman", 12, 23, true),
+        new Civ("folk_councillor", 16, 23, true),
         new Civ("folk_farmer", 11, 11),
         new Civ("folk_farmer", 46, 27),
         new Civ("folk_carpenter", 34, 27),
         new Civ("folk_florist", 47, 23),
-        new Civ("folk_blacksmith", 57, 7),
-        new Civ("folk_miner", 47, 11),
-        new Civ("folk_scholar", 40, 9),
-        new Civ("folk_baker", 31, 15),
-        new Civ("folk_carpenter", 38, 16),
-        Civ.Police("folk_police", 17, 22, 0),
-        Civ.Police("folk_soldier", 33, 12, 1),
-        Civ.Police("folk_soldier", 52, 2, 2),
-        Civ.Police("folk_soldier", 27, 2, 3)
+        new Civ("folk_mechanic", 57, 7),
+        new Civ("folk_clerk2", 47, 11),
+        new Civ("folk_clerk", 40, 9),
+        new Civ("folk_cook", 31, 15),
+        new Civ("folk_mechanic", 38, 16),
+        Civ.Police("folk_cop", 17, 22, 0),
+        Civ.Police("folk_trooper", 33, 12, 1),
+        Civ.Police("folk_trooper2", 52, 2, 2),
+        Civ.Police("folk_trooper", 27, 2, 3)
     };
 
     // Patrol routes for the police officer and the soldiers (they walk back and forth along these tiles)
@@ -390,6 +390,6 @@ public static class Level2Data
     {
         Name = "Fort Maple", Width = Width, Height = Height, Ground = Ground, Paths = Paths,
         Objects = Objects, Civilians = Civilians, Start = Start, Exits = Exits, Patrols = Patrols, FriendsNeeded = 15,
-        Night = true, RoadTiles = "road_",
+        Night = true, RoadTiles = "road_", AlienCanDie = true,
     };
 }

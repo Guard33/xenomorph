@@ -1,6 +1,4 @@
 # Makes the extra Level 3 art:
-#   Assets/Art/Level3Pieces/folk_general.png   the General (mini boss): the soldier with a red beret
-#                                              and gold insignia; drawn at 2x in the game
 #   Assets/Resources/Upgrades/psi_shield.png    skill icon for the Psi Shield (16 x 16)
 # Run from the repo root:  python Tools/make_level3_art.py
 import os
@@ -8,25 +6,7 @@ from PIL import Image
 
 os.makedirs("Assets/Art/Level3Pieces", exist_ok=True)
 
-# ---------------------------------------------------------------- the General
-sol = Image.open("Assets/Art/Level2Pieces/folk_soldier.png").convert("RGBA")
-recolour = {
-    (118, 126, 84): (150, 36, 40),     # helmet -> red beret
-    (92, 100, 66): (112, 26, 32),
-    (196, 186, 112): (255, 214, 72),   # badge -> gold
-    (132, 150, 78): (84, 98, 58),      # uniform darker, officer green
-    (96, 112, 56): (64, 76, 44),
-}
-gen = sol.copy()
-for y in range(gen.height):
-    for x in range(gen.width):
-        r, g, b, a = gen.getpixel((x, y))
-        if a and (r, g, b) in recolour:
-            gen.putpixel((x, y), recolour[(r, g, b)] + (a,))
-# gold shoulder marks
-for (x, y) in [(5, 10), (10, 10)]:
-    if gen.getpixel((x, y))[3]: gen.putpixel((x, y), (255, 214, 72, 255))
-gen.save("Assets/Art/Level3Pieces/folk_general.png")
+# The General (folk_general.png) is now drawn by Tools/make_modern_art.py in a modern uniform.
 
 # ---------------------------------------------------------------- Psi Shield icon
 ico = Image.new("RGBA", (16, 16), (0, 0, 0, 0))

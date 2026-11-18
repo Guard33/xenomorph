@@ -174,26 +174,26 @@ town = [("shopkeeper", 10, 21), ("merchant", 12, 21),        # outside the gener
         ("scholar", 14, 21),                                  # the church
         ("tailor", 22, 21), ("baker", 3, 21),                 # in front of their houses
         ("courier", 26, 22),                                  # heading up the road to the base
-        ("lamplighter", 7, 22),                               # lighting the main street lamps
+        ("lineman", 7, 22),                                   # fixing the main street lamps
         ("bartender", 9, 24), ("innkeeper", 24, 26),
         ("grandpa", 10, 25), ("grandma", 11, 25),             # on their porch
         ("florist", 15, 26),                                  # by the fountain
         ("fisherman", 6, 27), ("painter", 6, 25),             # pond park
-        ("herbalist", 4, 17)]
+        ("gardener", 4, 17)]
 for (s, x, y) in town: C(s, x, y)
-C("town-crier", 12, 23, lookout=True); C("mayor", 16, 23, lookout=True)   # both watch the square
+C("watchman", 12, 23, lookout=True); C("councillor", 16, 23, lookout=True)   # both watch the square
 C("farmer", 11, 11)                                                     # town farm, barn yard
 # Crash farm: the first people the alien meets
 for (s, x, y) in [("farmer", 46, 27), ("carpenter", 34, 27), ("florist", 47, 23)]: C(s, x, y)
-# Base staff (unarmed): mechanic at the motor pool, depot worker, HQ clerk, cook by the barracks, hangar mechanic
-for (s, x, y) in [("blacksmith", 57, 7), ("miner", 47, 11), ("scholar", 40, 9), ("baker", 31, 15), ("carpenter", 38, 16)]:
+# Base staff (unarmed): mechanic at the motor pool, depot clerk, HQ clerk, cook by the barracks, hangar mechanic
+for (s, x, y) in [("mechanic", 57, 7), ("clerk2", 47, 11), ("clerk", 40, 9), ("cook", 31, 15), ("mechanic", 38, 16)]:
     C(s, x, y)
 # Patrols: the police officer walks from the police station up through the main gate;
 # soldiers walk the base road, the rear gate road and the outside of the west fence (by the woods)
-patrols = [([(17, 22), (32, 22), (32, 13)], "police"),
-           ([(33, 12), (51, 12)], "soldier"),
-           ([(52, 2), (52, 11)], "soldier"),
-           ([(27, 2), (27, 19)], "soldier")]
+patrols = [([(17, 22), (32, 22), (32, 13)], "cop"),
+           ([(33, 12), (51, 12)], "trooper"),
+           ([(52, 2), (52, 11)], "trooper2"),
+           ([(27, 2), (27, 19)], "trooper")]
 for i, (p, s) in enumerate(patrols): C(s, p[0][0], p[0][1], patrol=i)
 patrols = [p for (p, s) in patrols]
 
@@ -307,7 +307,7 @@ lines.append("    public static readonly LevelMap Map = new LevelMap")
 lines.append("    {")
 lines.append('        Name = "Fort Maple", Width = Width, Height = Height, Ground = Ground, Paths = Paths,')
 lines.append("        Objects = Objects, Civilians = Civilians, Start = Start, Exits = Exits, Patrols = Patrols, FriendsNeeded = 15,")
-lines.append('        Night = true, RoadTiles = "road_",')
+lines.append('        Night = true, RoadTiles = "road_", AlienCanDie = true,')
 lines.append("    };")
 lines.append("}")
 open(OUT, "w", encoding="utf-8").write("\n".join(lines) + "\n")

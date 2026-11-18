@@ -10,7 +10,7 @@ Made by a team of four for **CSCI 3836 (Computer Game Design & Development)** at
 
 - **Befriend, don't fight.** Beam people to win them over. Anyone who notices you runs for the exits, and every escape counts against you.
 - **Herd the crowd.** Scared people run along the roads and avoid an exit you're guarding, so you can steer them.
-- **Watch the watchers.** Lookouts, police and soldiers raise the alarm if you linger in their circle, and the whole area panics.
+- **Watch the watchers.** Town lookouts watch a circle; soldiers, sentries and watchtower searchlights see in cones. Get spotted on a base and the alarm puts every guard on your trail, firing tranquilliser darts.
 - **Evolve.** Fill the friendship meter to evolve and pick a new skill. Each level's new threat has an answer in the skill tree.
 
 | | |
@@ -24,8 +24,8 @@ Made by a team of four for **CSCI 3836 (Computer Game Design & Development)** at
 | Level | Setting | New threat | Goal |
 |---|---|---|---|
 | 1. Quiet Farm Town | Daytime farm town (tutorial) | Lookouts ring an alarm | Befriend 10 of 20 |
-| 2. Fort Maple | Town next to an army base, at night | Police and soldiers on patrol (3 hits, alarms) | Befriend 15 of 30 |
-| 3. Fort Maple Command | Deep inside the army base, at night | **The General** (mini boss) shoots darts; sentries | Befriend 17 of 31, survive |
+| 2. Fort Maple | Town next to an army base, at night | Police, soldiers with tranquilliser rifles, watchtowers | Befriend 15 of 30, survive |
+| 3. Fort Maple Command | The main army post, at night | **The General** (mini boss), sentries, 8 watchtowers, base alarm | Befriend 17 of 32, survive |
 | 4. City Centre | *Planned* | Army and a time limit | |
 
 ## Skills

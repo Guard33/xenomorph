@@ -4,6 +4,17 @@ using UnityEngine;
 public static class GameSettings
 {
     const string VolumeKey = "xeno_volume";
+    const string MiniMapKey = "xeno_minimap";
+
+    // Mini map size: 0 small, 1 medium, 2 large
+    public static readonly string[] MiniMapSizes = { "Small", "Medium", "Large" };
+    static readonly float[] MiniMapWidths = { 170f, 260f, 400f };   // pixels wide on a 1080p screen
+    public static int MiniMapSize
+    {
+        get => Mathf.Clamp(PlayerPrefs.GetInt(MiniMapKey, 1), 0, MiniMapSizes.Length - 1);
+        set { PlayerPrefs.SetInt(MiniMapKey, (value + MiniMapSizes.Length) % MiniMapSizes.Length); PlayerPrefs.Save(); }
+    }
+    public static float MiniMapWidth => MiniMapWidths[MiniMapSize];
 
     public static float Volume
     {
@@ -81,7 +92,9 @@ public static class MenuPages
             "Too many escape = you lose.",
             "Yellow circle = lookout.",
             "  Beam them before the alarm.",
-            "Police and soldiers: 3 hits.",
+            "Guards see inside their cone.",
+            "Soldiers shoot darts, and the",
+            "  alarm puts every guard on you.",
             "Green arrow = where you aim.",
             "Fill the meter to evolve",
             "  and learn a new skill.",
@@ -115,7 +128,7 @@ public static class MenuPages
     {
         float W = Screen.width, H = Screen.height, k = Hud.Scale, u = Hud.Unit;
         Dim();
-        float w = 560f * k, h = 380f * k;
+        float w = 560f * k, h = 460f * k;
         Rect r = new Rect((W - w) / 2f, (H - h) / 2f, w, h);
         Hud.Panel(r, PanelColor);
         Hud.Text(new Rect(r.x, r.y + 18f * k, w, 40f * k), "SETTINGS", 30, Title);
@@ -139,6 +152,12 @@ public static class MenuPages
         Hud.Text(new Rect(r.x + 40f * k, y, 160f * k, 44f * k), "Fullscreen", 16, Body, TextAnchor.MiddleLeft);
         if (Button(new Rect(r.x + 230f * k, y, 160f * k, 44f * k), Screen.fullScreen ? "On" : "Off", false))
             Screen.fullScreen = !Screen.fullScreen;
+
+        // Mini map size: click to cycle Small / Medium / Large
+        y += 76f * k;
+        Hud.Text(new Rect(r.x + 40f * k, y, 160f * k, 44f * k), "Mini map", 16, Body, TextAnchor.MiddleLeft);
+        if (Button(new Rect(r.x + 230f * k, y, 160f * k, 44f * k), GameSettings.MiniMapSizes[GameSettings.MiniMapSize], false))
+            GameSettings.MiniMapSize++;
 
         Rect back = new Rect(r.x + (w - 220f * k) / 2f, r.yMax - 70f * k, 220f * k, 48f * k);
         return Button(back, "Back", false);

@@ -5,37 +5,47 @@
 # Then in Unity: Alien Game > Build Level 3.
 #
 # ---------------------------------------------------------------- the story of the map
-# After Fort Maple's town, the alien slips through the rear gate into the inner base, where the
-# army runs the operation. It is night and all concrete. Every area has a job:
-#   South gate (start)   - the alien breaks in by the motor pool.
-#   Motor pool (SW)      - garages, tanks and trucks on a dirt yard; mechanics working late.
-#   Supply + ammo (W)    - depots, containers and an ammo bunker behind sandbags; a sentry guards it.
-#   Barracks (NW)        - six barracks with the cook and the mess steward; a soldier walks the lane.
-#   Command compound (N) - walled; HQ, flag offices, command centre and bunker around the parade
-#                          ground. THE GENERAL (mini boss) paces the parade ground; two sentries
-#                          hold the compound gate. The north gate behind HQ is Exit A.
-#   Training ground (NE) - sandbag lines and tanks on dirt; a soldier walks the firing line.
-#   Airfield (E)         - hangars with their aircraft parked in front, the runway, and the east
-#                          gate (Exit B), where people try to fly out.
-#   Two cross roads join everything; soldiers patrol both. Floodlights light every work area.
-# Talia's military sprites are drawn at 2x (M(...)); footprints (w, h) are tiles at that size.
+# After Fort Maple's town, the alien slips through the south gate into the main army post. It is laid
+# out like a real installation, at night, in the present day:
+#   Perimeter            - fence all round, a perimeter road just inside it, and watchtowers at the
+#                          corners and gates. Their searchlights sweep the base: get caught in a beam
+#                          and the base alarm goes off.
+#   South gate (start)   - the entry control point. The main avenue runs north to HQ and the north gate.
+#   Cantonment (NW)      - two rows of barracks around a quad, the dining hall and the gym.
+#   Clinic (W)           - the clinic and its medevac helipad; medics on duty.
+#   Training range (W)   - firing lines of sandbags; the range officer.
+#   Headquarters (N)     - HQ facing the parade field, flag offices either side, the command centre and
+#                          bunker. THE GENERAL (mini boss) paces the parade field. North gate = Exit A.
+#   Cemetery (NE)        - rows of headstones, a memorial flag and the groundskeeper.
+#   Motor pool (SW)      - a fenced yard with maintenance bays and trucks and tanks parked in rows.
+#   Ammo point (S)       - its own fence; ammunition bunkers separated by earth berms.
+#   Airfield (SE)        - hangars, aircraft on the apron, control tower, helipads, fuel, the runway.
+#                          The east gate (Exit B) is at the end of the cross street.
+# Soldiers patrol the perimeter road, the cross street, the runway and the barracks quad. Sentries guard
+# HQ, the motor pool, the ammo point, the airfield and the east gate. Everyone in uniform has a
+# tranquilliser rifle; when anyone spots the alien the whole base goes on alarm.
+# Military sprites are drawn at 2x (M(...)); footprints (w, h) are tiles at that size.
 import sys
 W, H = 96, 58
 OUT = sys.argv[1] if len(sys.argv) > 1 else None
 
 # ---------------------------------------------------------------- roads
+# Laid out like a real installation: a perimeter road just inside the fence, a main avenue from
+# the south gate (entry control point) to the north gate, cross streets between the districts.
 road = set()
 def hline(y, x0, x1):
     for x in range(x0, x1 + 1): road.add((x, y))
 def vline(x, y0, y1):
     for y in range(y0, y1 + 1): road.add((x, y))
-vline(48, 0, 57)     # main avenue: south gate -> compound gate -> north gate (Exit A)
-hline(29, 2, 95)     # north cross road -> east gate (Exit B)
-hline(46, 2, 93)     # south cross road along the motor pool and the airfield
-hline(52, 49, 93)    # runway
-vline(2, 29, 46)     # west lane by the supply depot
-EXITS = [(48, 0), (95, 29)]
-START = (48, 54)
+hline(3, 3, 92); hline(54, 3, 92); vline(3, 3, 54); vline(92, 3, 54)   # perimeter road
+vline(48, 0, 57)     # main avenue: south gate -> HQ -> north gate (Exit A)
+hline(30, 3, 95)     # cross street -> east gate (Exit B)
+hline(17, 3, 47)     # cantonment street
+hline(44, 3, 92)     # south street: motor pool, ammo point, airfield apron
+hline(49, 52, 90)    # runway
+vline(60, 45, 48); vline(84, 45, 48)   # taxiways
+EXITS = [(48, 0), (95, 30)]
+START = (48, 56)
 
 def mask(x, y):
     m = 0
@@ -51,99 +61,116 @@ ground = [['c' for x in range(W)] for y in range(H)]
 def dirt(x0, y0, x1, y1):
     for y in range(y0, y1 + 1):
         for x in range(x0, x1 + 1): ground[y][x] = 's' if (x + y) % 3 == 0 else 'd'
-dirt(3, 47, 45, 56)        # motor pool yard
-dirt(77, 1, 94, 25)        # training ground
-dirt(3, 37, 20, 44)        # ammo dump
-for y in range(1, 27):     # the barracks stand on a lawn
-    for x in range(1, 20): ground[y][x] = ',' if (x * 7 + y * 3) % 9 == 0 else '.'
+def lawn(x0, y0, x1, y1):
+    for y in range(y0, y1 + 1):
+        for x in range(x0, x1 + 1): ground[y][x] = ',' if (x * 7 + y * 3) % 9 == 0 else '.'
+lawn(4, 4, 47, 16)         # cantonment quad
+lawn(4, 18, 20, 29)        # clinic grounds
+lawn(54, 18, 74, 29)       # parade field
+lawn(77, 4, 91, 29)        # cemetery
+dirt(22, 18, 47, 29)       # training range
+dirt(5, 32, 46, 43)        # motor pool yard
+dirt(6, 46, 44, 53)        # ammunition supply point
 
 # ---------------------------------------------------------------- objects
 objs = []
 def O(s, x, y, w, h, k, sc=1): objs.append((s, x, y, w, h, k, sc))
 def M(s, x, y, w, h, k): O(s, x, y, w, h, k, 2)
 def flood(x, y): O("flood_light", x, y, 1, 1, "lamp")
+def tree(x, y): O("tree%d" % (len(objs) % 4 + 1), x, y, 1, 1, "tree")
 
-# Outer wall of the base (gaps: north gate, east gate, south gate)
+# Perimeter fence (gaps: north gate, east gate, south gate) with watchtowers at the corners and gates.
+# Every watchtower has a searchlight that sweeps the base and raises the alarm if it catches the alien.
 for x in range(0, 96, 2):
     if x != 48: O("wire_fence", x, 0, 2, 1, "fence"); O("wire_fence", x, 57, 2, 1, "fence")
 for y in range(1, 57, 2):
     O("fence_post", 0, y, 1, 2, "fence")
     if y != 29: O("fence_post", 95, y, 1, 2, "fence")
+for (i, (x, y)) in enumerate([(1, 1), (93, 1), (1, 55), (93, 55), (50, 1), (43, 55), (93, 26), (1, 27)]):
+    M("guard_hut_%d" % (i % 2 + 1), x, y, 2, 2, "building")
 
-# --- Command compound: inner wall with one gate on the avenue
-for x in range(20, 74, 2):
-    if x != 48: O("wire_fence", x, 27, 2, 1, "fence")
-for y in range(1, 27, 2):
-    O("fence_post", 20, y, 1, 2, "fence"); O("fence_post", 74, y, 1, 2, "fence")
-M("base_hq_large", 26, 2, 8, 6, "building")
-M("hq_flag_1", 54, 2, 5, 6, "building"); M("hq_flag_2", 60, 2, 5, 6, "building")
-M("command_building", 23, 15, 4, 4, "building"); M("command_building", 67, 10, 4, 4, "building")
-M("command_building", 36, 3, 4, 4, "building")             # signals office
-M("bunker", 66, 19, 4, 2, "vehicle")                       # command bunker
-for (x, y) in [(30, 13), (60, 13), (45, 24), (51, 24), (38, 10), (58, 20)]: flood(x, y)   # parade ground + gate
+# --- Headquarters: HQ facing the parade field, flag offices either side, command centre
+M("hq_flag_1", 50, 5, 5, 6, "building"); M("base_hq_large", 58, 5, 8, 6, "building"); M("hq_flag_2", 68, 5, 5, 6, "building")
+M("command_building", 50, 12, 4, 4, "building"); M("command_building", 70, 12, 4, 4, "building")
+M("bunker", 58, 13, 4, 2, "vehicle")                      # command bunker behind the field
+O("flagpole", 64, 18, 1, 3, "lamp")                         # colours at the head of the parade field
+for (x, y) in [(55, 19), (73, 19), (55, 28), (73, 28)]: flood(x, y)
 
-# --- Barracks quarter (NW)
-i = 0
-for y in (3, 10, 17):
-    for x in (2, 7, 12):
-        M(["barracks_1", "barracks_2", "barracks_camo"][i % 3], x, y, 2, 2, "building"); i += 1
-flood(5, 8); flood(10, 15); flood(15, 22)
+# --- Cemetery (NE): rows of headstones, a memorial flag, trees along the sides
+O("flagpole", 84, 5, 1, 3, "lamp")
+for y in range(10, 29, 2):
+    for x in (79, 81, 83, 85, 87, 89): O("grave", x, y, 1, 1, "fence")
+for y in (5, 9, 13, 17, 21, 25): tree(77, y); tree(91, y)
 
-# --- Supply depot and ammo dump (W)
-M("supply_depot_1", 5, 31, 2, 2, "building"); M("supply_depot_2", 9, 31, 2, 2, "building"); M("supply_depot_1", 13, 31, 2, 2, "building")
-M("container", 18, 31, 3, 2, "vehicle"); M("container_upright", 23, 31, 2, 3, "vehicle")
-M("container", 27, 31, 3, 2, "vehicle"); M("army_truck", 32, 31, 4, 2, "vehicle")   # loading up
-M("container", 38, 31, 3, 2, "vehicle")
-M("bunker", 5, 38, 4, 2, "vehicle"); M("bunker", 5, 42, 4, 2, "vehicle")           # ammo bunkers
-M("dirt_mound", 12, 38, 2, 1, "vehicle"); M("dirt_mound", 12, 42, 2, 1, "vehicle"); M("dirt_mound", 16, 40, 2, 1, "vehicle")  # sandbags
-flood(24, 38); flood(34, 37); flood(42, 42)
+# --- Cantonment (NW): two rows of barracks facing a quad, the dining hall and the gym
+for x in (6, 11, 16, 21, 26, 31):
+    M(["barracks_1", "barracks_2", "barracks_camo"][(x // 5) % 3], x, 5, 2, 2, "building")
+    M(["barracks_camo", "barracks_1", "barracks_2"][(x // 5) % 3], x, 13, 2, 2, "building")
+M("supply_depot_2", 38, 5, 2, 2, "building")               # dining hall
+M("supply_depot_1", 38, 13, 2, 2, "building")              # gym
+flood(9, 8); flood(24, 8); flood(42, 9)
 
-# --- Motor pool (SW) by the south gate
-for (j, x) in enumerate([4, 8, 12, 16]): M("garage_%d" % (j % 3 + 1), x, 49, 2, 2, "building")
-M("tank", 22, 49, 2, 2, "vehicle"); M("tank", 26, 49, 2, 2, "vehicle"); M("tank", 30, 49, 2, 2, "vehicle")
-M("army_truck", 35, 50, 4, 2, "vehicle"); M("army_truck", 22, 53, 4, 2, "vehicle")
-M("guard_hut_1", 44, 51, 2, 2, "building")                 # south gate hut (searchlight)
-M("dirt_mound", 50, 55, 2, 1, "vehicle")                   # sandbags at the gate
-flood(20, 47); flood(40, 55)
+# --- Clinic with its helipad
+M("command_building", 6, 19, 4, 4, "building")
+O("helipad", 12, 19, 3, 3, "deco")
+flood(17, 24)
 
-# --- Airfield (E): each aircraft parked in front of its hangar, fuel tanks, runway below
-for (j, x) in enumerate([53, 60, 67, 74, 81, 88]):
-    M("hangar_small_%d" % (j % 3 + 1), x, 32, 2, 2, "building")
-for (j, x) in enumerate([52, 59, 66, 73, 80, 87]):
-    M("helicopter" if j % 2 == 0 else "jet", x, 37, 3, 2, "vehicle")
-M("container", 60, 42, 3, 2, "vehicle"); M("container", 70, 42, 3, 2, "vehicle")    # fuel store
-M("guard_hut_2", 91, 24, 2, 2, "building")                 # east gate hut (searchlight)
-for (x, y) in [(57, 35), (71, 35), (85, 35), (62, 55), (80, 55)]: flood(x, y)
+# --- Training range: firing lines of sandbags
+for x in (24, 28, 32, 36, 40, 44):
+    M("dirt_mound", x, 21, 2, 1, "vehicle"); M("dirt_mound", x, 27, 2, 1, "vehicle")
 
-# --- Training ground (NE): sandbag firing lines and tanks
-for (x, y) in [(79, 5), (85, 5), (91, 5), (79, 11), (85, 11), (91, 11)]: M("dirt_mound", x, y, 2, 1, "vehicle")
-M("tank", 79, 17, 2, 2, "vehicle"); M("tank", 86, 17, 2, 2, "vehicle")
-flood(83, 8); flood(89, 14); flood(80, 22)
+# --- Motor pool (SW): fenced yard, maintenance bays, vehicles parked in neat rows
+for x in range(4, 48, 2):
+    if x != 26: O("wire_fence", x, 31, 2, 1, "fence")
+for y in range(32, 44, 2): O("fence_post", 4, y, 1, 2, "fence"); O("fence_post", 47, y, 1, 2, "fence")
+for (i, x) in enumerate((7, 11, 15, 19)): M("garage_%d" % (i % 3 + 1), x, 33, 2, 2, "building")
+for x in (7, 13, 19, 25, 31, 37): M("army_truck", x, 37, 4, 2, "vehicle")
+for x in (7, 11, 15, 19, 23, 27, 31, 35, 39): M("tank", x, 40, 2, 2, "vehicle")
+flood(30, 33); flood(42, 33)
+
+# --- Ammunition supply point (S): its own fence, bunkers separated by earth berms
+for x in range(6, 46, 2):
+    if x != 24: O("wire_fence", x, 45, 2, 1, "fence")
+for y in range(46, 54, 2): O("fence_post", 5, y, 1, 2, "fence"); O("fence_post", 45, y, 1, 2, "fence")
+for y in (47, 50):
+    for x in (8, 18, 28, 36): M("bunker", x, y, 4, 2, "vehicle")
+    for x in (14, 24, 33): M("dirt_mound", x, y, 2, 1, "vehicle")
+
+# --- Airfield (SE): hangars, aircraft on the apron, control tower, helipads, fuel, runway
+for (i, x) in enumerate((52, 58, 64, 70, 76)): M("hangar_small_%d" % (i % 3 + 1), x, 32, 2, 2, "building")
+for (i, x) in enumerate((51, 57, 63, 69, 75)): M("helicopter" if i % 2 == 0 else "jet", x, 36, 3, 2, "vehicle")
+M("command_building", 84, 32, 4, 4, "building")             # control tower
+O("helipad", 82, 38, 3, 3, "deco"); O("helipad", 87, 38, 3, 3, "deco")
+M("container", 52, 40, 3, 2, "vehicle"); M("container", 56, 40, 3, 2, "vehicle")   # fuel
+for (x, y) in [(62, 34), (74, 34), (80, 42), (66, 51), (78, 51)]: flood(x, y)
 
 # ---------------------------------------------------------------- people
 civs = []   # (sprite, x, y, lookout, patrol, boss, toughness)
 def C(s, x, y, lookout=False, patrol=-1, boss=False, tough=0): civs.append(("folk_" + s, x, y, lookout, patrol, boss, tough))
-# Base staff (1 hit): people stand where they work
-for (s, x, y) in [("baker", 5, 6), ("innkeeper", 10, 13), ("tailor", 4, 23),          # mess hall, laundry
-                  ("scholar", 40, 14), ("courier", 52, 12), ("tailor", 42, 9), ("scholar", 62, 9),  # HQ staff
-                  ("miner", 18, 43), ("merchant", 30, 38), ("courier", 40, 36),       # ammo dump, quartermasters
-                  ("blacksmith", 20, 52), ("carpenter", 8, 54), ("painter", 32, 55),  # motor pool mechanics
-                  ("carpenter", 56, 44), ("painter", 75, 44), ("courier", 84, 49), ("scholar", 90, 41),  # airfield crew
-                  ("miner", 82, 9)]:                                                  # range officer
+# Base staff (unarmed, 1 hit): people stand where they work
+for (s, x, y) in [("cook", 40, 8), ("cook", 36, 8), ("clerk", 14, 8),                  # dining hall, barracks
+                  ("medic", 8, 24), ("medic", 11, 24),                                   # clinic
+                  ("clerk2", 34, 24),                                                    # range officer
+                  ("clerk", 52, 11), ("clerk2", 56, 8), ("clerk", 67, 11),               # HQ staff
+                  ("mechanic", 24, 34), ("mechanic", 10, 39), ("mechanic", 35, 39),      # motor pool
+                  ("clerk2", 42, 49),                                                    # ammo technician
+                  ("pilot", 54, 38), ("pilot", 66, 38), ("pilot", 80, 36), ("mechanic", 72, 40),  # airfield
+                  ("gardener", 84, 9)]:                                                  # cemetery groundskeeper
     C(s, x, y)
-# Sentries (2 hits): stand guard and raise the alarm, like the lookouts in town
-for (x, y) in [(47, 26), (50, 26), (21, 36), (88, 44), (93, 27)]: C("soldier", x, y, lookout=True, tough=2)
-# Patrols: 0 is the General's beat on the parade ground, the rest are soldiers (3 hits)
-patrols = [[(30, 21), (64, 21)],        # the General
-           [(17, 2), (17, 26)],         # barracks lane
-           [(3, 29), (46, 29)],         # north cross road, west
-           [(50, 29), (93, 29)],        # north cross road, east (to the east gate)
-           [(3, 46), (46, 46)],         # south cross road, motor pool
-           [(50, 46), (92, 46)],        # south cross road, airfield
-           [(50, 52), (92, 52)],        # the runway
-           [(76, 2), (94, 2)]]          # training ground firing line
-C("general", 30, 21, patrol=0, boss=True)
-for i in range(1, len(patrols)): C("soldier", patrols[i][0][0], patrols[i][0][1], patrol=i)
+# Sentries (2 hits): stand guard at the doors and gates, scan around, raise the base alarm, shoot darts
+for (x, y) in [(63, 12), (27, 32), (24, 46), (88, 42), (94, 28)]: C("trooper", x, y, lookout=True, tough=2)
+# Patrols: 0 is the General's beat on the parade field, the rest are soldiers (3 hits, darts)
+patrols = [[(57, 24), (71, 24)],        # the General
+           [(4, 3), (91, 3)],           # north perimeter road
+           [(3, 4), (3, 53)],           # west perimeter road
+           [(92, 4), (92, 53)],         # east perimeter road
+           [(91, 54), (52, 54)],        # south perimeter road (east of the gate)
+           [(4, 30), (47, 30)],         # cross street, west
+           [(49, 30), (91, 30)],        # cross street, east
+           [(52, 49), (90, 49)],        # the runway
+           [(5, 10), (35, 10)]]         # through the barracks quad
+C("general", 57, 24, patrol=0, boss=True)
+for i in range(1, len(patrols)): C("trooper" if i % 2 else "trooper2", patrols[i][0][0], patrols[i][0][1], patrol=i)
 FRIENDS_NEEDED = 17
 
 # ---------------------------------------------------------------- checks

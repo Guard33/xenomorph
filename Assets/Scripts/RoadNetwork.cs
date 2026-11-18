@@ -15,6 +15,7 @@ public static class RoadNetwork
     const float IgnoreNear = 1.5f;    // the first bit of the route (right next to the person) doesn't count
 
     static bool[,] blocked;
+    static bool[,] sightBlocked;      // buildings and vehicles: guards can't see through them
     static float[][,] distToExit;     // one cost map per exit
     static LevelMap builtFor;         // the map the caches above were made for
 
@@ -54,6 +55,7 @@ public static class RoadNetwork
         builtFor = Map;
         int W = Map.Width, H = Map.Height;
         blocked = new bool[W, H];
+        sightBlocked = new bool[W, H];
 
         for (int y = 0; y < H; y++)
             for (int x = 0; x < W; x++)
@@ -65,9 +67,10 @@ public static class RoadNetwork
         foreach (Obj o in Map.Objects)
         {
             if (!BlocksWalking(o.kind)) continue;
+            bool solid = o.kind == "building" || o.kind == "vehicle";
             for (int y = o.y; y < o.y + o.h; y++)
                 for (int x = o.x; x < o.x + o.w; x++)
-                    if (InMap(new Vector2Int(x, y))) blocked[x, y] = true;
+                    if (InMap(new Vector2Int(x, y))) { blocked[x, y] = true; if (solid) sightBlocked[x, y] = true; }
         }
 
         Vector2Int[] exits = Exits;
@@ -106,6 +109,53 @@ public static class RoadNetwork
             }
         }
         return dist;
+    }
+
+    // Can a guard at a see b? Buildings and vehicles in between block the view.
+    public static bool LineOfSight(Vector2 a, Vector2 b)
+    {
+        Build();
+        float d = Vector2.Distance(a, b);
+        int n = Mathf.CeilToInt(d / 0.3f);
+        for (int i = 1; i < n; i++)
+        {
+            Vector2 p = Vector2.Lerp(a, b, (float)i / n);
+            if (Vector2.Distance(p, a) < 0.6f || Vector2.Distance(p, b) < 0.6f) continue;
+            Vector2Int t = TileAt(p);
+            if (InMap(t) && sightBlocked[t.x, t.y]) return false;
+        }
+        return true;
+    }
+
+    // Shortest walkable route between two points (guards hunting the alien during the alarm)
+    public static List<Vector2> RouteTo(Vector2 from, Vector2 to)
+    {
+        Build();
+        int W = Map.Width, H = Map.Height;
+        Vector2Int start = NearestWalkable(TileAt(from)), goal = NearestWalkable(TileAt(to));
+        List<Vector2> route = new List<Vector2>();
+        if (!InMap(start) || !InMap(goal)) return route;
+        int[] prev = new int[W * H];
+        for (int i = 0; i < prev.Length; i++) prev[i] = -2;
+        Queue<Vector2Int> q = new Queue<Vector2Int>();
+        q.Enqueue(start);
+        prev[start.y * W + start.x] = -1;
+        while (q.Count > 0)
+        {
+            Vector2Int u = q.Dequeue();
+            if (u == goal) break;
+            foreach (Vector2Int d in Dirs)
+            {
+                Vector2Int v = u + d;
+                if (!InMap(v) || blocked[v.x, v.y] || prev[v.y * W + v.x] != -2) continue;
+                prev[v.y * W + v.x] = u.y * W + u.x;
+                q.Enqueue(v);
+            }
+        }
+        if (prev[goal.y * W + goal.x] == -2) return route;   // unreachable
+        for (int c = goal.y * W + goal.x; c >= 0; c = prev[c]) route.Add(TileCenter(new Vector2Int(c % W, c / W)));
+        route.Reverse();
+        return route;
     }
 
     // Route from a point to one exit, then a little way off the map

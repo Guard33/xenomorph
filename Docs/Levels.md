@@ -46,18 +46,28 @@ To play: open `Assets/Scenes/StartScreen.unity`, press Play, then Enter. **Stage
 - Befriend 15 to fill the meter.
 - Played after Level 1 and the Evolve screen. Pressing Play in `Level2.unity` directly gives J = Wide Wave.
 
+## Guards and the base alarm (Levels 2 and 3)
+
+- Soldiers, sentries, police and the General see in a **vision cone** (buildings and vehicles block it). Town lookouts in Levels 1 and 2 still use their watch circle.
+- **Soldiers and sentries** carry tranquilliser rifles: 1 damage per dart and a short slow. The alien can be defeated in Levels 2 and 3.
+- Spotting the alien raises the **BASE ALARM** for every guard on the map: soldiers leave their routes and hunt the last place the alien was seen, sentries look that way, searchlights sweep faster, and staff near the alien run. It ends 12 s after the alien was last seen.
+- **Watchtowers**: the searchlight raises the alarm if the alien stays in its beam for a moment, then locks on (red) and follows it.
+- Police (town) still blow a whistle instead of shooting. Disguise fools everyone; Psi Shield blocks darts.
+
 ## Level 3: Fort Maple Command (mini boss)
 
-- 96 x 58 map deep inside the army base, at night. The story is at the top of `Tools/level3_design.py`:
-  - **South gate** (start) by the **motor pool**; **supply depot and ammo dump**; **barracks** on a lawn.
-  - **Command compound** (walled): HQ, flag offices, command centre and bunker around the parade ground. Exit A is the north gate behind HQ.
-  - **Training ground** with sandbag firing lines; **airfield** with hangars, aircraft and the runway. Exit B is the east gate.
-- **The General** (mini boss) paces the parade ground. Drawn at 2x, 12 hits, health bar at the top of the screen.
-  - He shoots tranquilliser darts at the alien when it is within 7.5 tiles (1 damage each). Buildings stop darts.
+- 96 x 58 map of the main army post, at night, laid out like a real installation. The story is at the top of `Tools/level3_design.py`:
+  - **Perimeter** fence and road, with **8 watchtowers** whose searchlights sweep the base.
+  - **South gate** (start, entry control point); the main avenue runs north to **HQ** and the north gate (Exit A).
+  - **Cantonment**: barracks rows around a quad, dining hall, gym. **Clinic** with a helipad. **Training range**.
+  - **HQ** facing the **parade field** (flagpole), flag offices, command centre, bunker. **Cemetery** (NE): rows of headstones.
+  - **Motor pool** (fenced yard, vehicles in rows), **ammunition supply point** (own fence, bunkers between berms), **airfield** (hangars, apron, control tower, helipads, fuel, runway). Exit B is the east gate.
+- **The General** (mini boss) paces the parade field. Drawn at 2x, 12 hits, health bar at the top of the screen.
+  - He sees in a cone 7.5 tiles long and shoots tranquilliser darts (1 damage each). Buildings stop darts and block his view.
   - Below 2/3 health he sounds the base alarm and fires 3-dart spreads; below 1/3 he alarms again and fires faster.
   - Disguise hides the alien from him; Psi Shield blocks his darts.
 - The alien **can be defeated** in this level (7 HP at stage 3). Game over says the General's darts knocked it out.
-- 31 people: 18 base staff, 5 sentries (stand guard like lookouts, 2 hits), 7 patrolling soldiers (3 hits) and the General.
+- 32 people: 18 base staff (clerks, cooks, medics, mechanics, pilots, groundskeeper), 5 sentries (2 hits), 8 patrolling soldiers (3 hits) and the General.
 - Befriend 17 to fill the meter. Played after Level 2 and the second Evolve screen (the K skill). Pressing Play in `Level3.unity` directly gives J = Wide Wave and K = Long Beam.
 
 ## Controls

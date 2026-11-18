@@ -28,6 +28,12 @@ Art/Level3Pieces:
   folk_general: the General (Level 3 mini boss), a recolour of folk_soldier, made by
   Tools/make_level3_art.py (which also makes the Psi Shield icon in Resources/Upgrades).
 
+Art/Modern:
+  Present-day people and props so every level fits one modern theme: soldier with a tranquilliser
+  rifle (folk_trooper/2), police (folk_cop), base staff (clerk, cook, medic, mechanic, pilot),
+  townsfolk (watchman, councillor, lineman, gardener), gravestone, flagpole, barrier, helipad;
+  plus the General in Level3Pieces. Drawn by Tools/make_modern_art.py in the same style as the town folk.
+
 Art/Alien:
   alien_idle_0/1 - green slime alien (2-frame idle bounce). Found by Talia.
 
