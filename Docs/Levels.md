@@ -48,7 +48,7 @@ To play: open `Assets/Scenes/StartScreen.unity`, press Play, then Enter. **Stage
 
 ## Level 3: Fort Maple Command (mini boss)
 
-- 56 x 34 map deep inside the army base, at night. The story is at the top of `Tools/level3_design.py`:
+- 72 x 44 map deep inside the army base, at night. The story is at the top of `Tools/level3_design.py`:
   - **South gate** (start) by the **motor pool**; **supply depot and ammo dump**; **barracks** on a lawn.
   - **Command compound** (walled): HQ, flag offices, command centre and bunker around the parade ground. Exit A is the north gate behind HQ.
   - **Training ground** with sandbag firing lines; **airfield** with hangars, aircraft and the runway. Exit B is the east gate.
@@ -57,8 +57,8 @@ To play: open `Assets/Scenes/StartScreen.unity`, press Play, then Enter. **Stage
   - Below 2/3 health he sounds the base alarm and fires 3-dart spreads; below 1/3 he alarms again and fires faster.
   - Disguise hides the alien from him; Psi Shield blocks his darts.
 - The alien **can be defeated** in this level (7 HP at stage 3). Game over says the General's darts knocked it out.
-- 22 people: 12 base staff, 4 sentries (stand guard like lookouts, 2 hits), 5 patrolling soldiers (3 hits) and the General.
-- Befriend 12 to fill the meter. Played after Level 2 and the second Evolve screen (the K skill). Pressing Play in `Level3.unity` directly gives J = Wide Wave and K = Long Beam.
+- 26 people: 14 base staff, 5 sentries (stand guard like lookouts, 2 hits), 6 patrolling soldiers (3 hits) and the General.
+- Befriend 14 to fill the meter. Played after Level 2 and the second Evolve screen (the K skill). Pressing Play in `Level3.unity` directly gives J = Wide Wave and K = Long Beam.
 
 ## Controls
 

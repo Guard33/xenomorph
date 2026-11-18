@@ -48,6 +48,11 @@ public class AlienPlayer : MonoBehaviour
     // Disguise: nobody notices the alien. Psi Shield: no damage.
     public static bool Disguised { get; private set; }
     public bool Shielded => shieldTimer > 0f;
+
+    // While the Psi Shield (psionic field) is up, every other skill does +1 damage
+    static AlienPlayer current;
+    public static int PowerBonus => current != null && current.Shielded ? 1 : 0;
+    public const float ShieldSeconds = 10f;
     public bool IsDead => Hp <= 0;
     public Vector2 Facing { get; private set; } = Vector2.down;
     public float DistanceMoved { get; private set; }
@@ -63,6 +68,7 @@ public class AlienPlayer : MonoBehaviour
 
     void Awake()
     {
+        current = this;
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
         flipbook = GetComponent<SpriteFlipbook>();
@@ -118,7 +124,7 @@ public class AlienPlayer : MonoBehaviour
         s.name = o != null ? o.name : id;
         s.unlocked = true;
         s.cooldown = id == "wide_wave" ? 1.2f : id == "calm_hum" ? 8f : id == "friend_trap" ? 6f
-                   : id == "long_beam" ? 1.5f : id == "disguise" ? 12f : id == "psi_shield" ? 10f : 1f;
+                   : id == "long_beam" ? 1.5f : id == "disguise" ? 12f : id == "psi_shield" ? 20f : 1f;
         s.timer = 0f;
     }
 
@@ -212,7 +218,7 @@ public class AlienPlayer : MonoBehaviour
         BeamEffect.Spawn(origin, Facing, range, beamWidth, new Color(0.4f, 0.9f, 1f, 0.9f));
         int hits = 0;
         foreach (Civilian c in Civilian.All.ToArray())
-            if (c.CanBeBefriended && InLine(origin, Facing, range, beamWidth, c.transform.position)) { c.Hit(); hits++; }
+            if (c.CanBeBefriended && InLine(origin, Facing, range, beamWidth, c.transform.position)) { c.Hit(2 + PowerBonus); hits++; }
         return hits;
     }
 
@@ -238,10 +244,11 @@ public class AlienPlayer : MonoBehaviour
         Puff(new Color(0.75f, 0.85f, 0.6f, 0.5f));
     }
 
-    // K option: Psi Shield (new) - a bubble that blocks all damage for 4 seconds
+    // K option: Psi Shield (new) - a psionic field that blocks all damage for 10 seconds
+    // and gives every other skill +1 damage while it is up (20 s cooldown)
     public void RaiseShield()
     {
-        shieldTimer = 4f;
+        shieldTimer = ShieldSeconds;
         if (shieldBubble == null)
         {
             GameObject b = new GameObject("Psi Shield");
@@ -273,7 +280,7 @@ public class AlienPlayer : MonoBehaviour
         Vector2 origin = transform.position;
         BeamEffect.Spawn(origin, Facing, beamRange, beamWidth, new Color(0.45f, 1f, 0.55f, 0.85f));
         Civilian hit = FirstInLine(origin, Facing, beamRange, beamWidth);
-        if (hit != null) hit.Hit();
+        if (hit != null) hit.Hit(1 + PowerBonus);
         return hit;
     }
 
@@ -288,7 +295,7 @@ public class AlienPlayer : MonoBehaviour
             Vector2 dir = Quaternion.Euler(0f, 0f, angle) * Facing;
             BeamEffect.Spawn(origin, dir, beamRange, beamWidth * 0.6f, new Color(0.96f, 0.5f, 0.75f, 0.85f));
             Civilian c = FirstInLine(origin, dir, beamRange, beamWidth * 0.7f);
-            if (c != null) { c.Hit(); hits++; }
+            if (c != null) { c.Hit(1 + PowerBonus); hits++; }
         }
         return hits;
     }

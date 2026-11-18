@@ -41,7 +41,7 @@ public static class UpgradePath
             {
                 new Option { id = "wide_wave", name = "Wide Wave", line1 = "Wave spreads", line2 = "hits 3 people", icon = "wide_wave", brainPath = true },
                 new Option { id = "calm_hum", name = "Calm Hum", line1 = "People near you", line2 = "stop panicking", icon = "calm_hum", brainPath = false },
-                new Option { id = "friend_trap", name = "Friend Trap", line1 = "Befriends all", line2 = "who walk near", icon = "friend_trap", brainPath = false },
+                new Option { id = "friend_trap", name = "Friend Trap", line1 = "2 hits to all", line2 = "who walk near", icon = "friend_trap", brainPath = false },
             },
         },
         new Tier
@@ -49,9 +49,9 @@ public static class UpgradePath
             stage = 3, key = "K", nextLevel = "Level 3: Fort Maple Command", threat = "The General (mini boss)", scene = "Level3",
             options = new[]
             {
-                new Option { id = "long_beam", name = "Long Beam", line1 = "Double range", line2 = "through people", icon = "long_beam", brainPath = true },
+                new Option { id = "long_beam", name = "Long Beam", line1 = "2 hits, 2x range", line2 = "through people", icon = "long_beam", brainPath = true },
                 new Option { id = "disguise", name = "Disguise", line1 = "Look human", line2 = "for 5 seconds", icon = "disguise", brainPath = false },
-                new Option { id = "psi_shield", name = "Psi Shield", line1 = "Blocks all hits", line2 = "for 4 seconds", icon = "psi_shield", brainPath = true },
+                new Option { id = "psi_shield", name = "Psi Shield", line1 = "10 s: no damage,", line2 = "+1 to all skills", icon = "psi_shield", brainPath = true },
             },
         },
         new Tier

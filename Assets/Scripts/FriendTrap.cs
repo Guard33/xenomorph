@@ -63,7 +63,7 @@ public class FriendTrap : MonoBehaviour
     {
         int hits = 0;
         foreach (Civilian c in Civilian.All.ToArray())
-            if (c.CanBeBefriended && Vector2.Distance(c.transform.position, transform.position) < effectRadius) { c.Hit(); hits++; }
+            if (c.CanBeBefriended && Vector2.Distance(c.transform.position, transform.position) < effectRadius) { c.Hit(2 + AlienPlayer.PowerBonus); hits++; }
 
         GameObject pulse = new GameObject("Trap Pulse");
         pulse.transform.position = transform.position;

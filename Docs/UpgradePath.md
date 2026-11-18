@@ -19,7 +19,7 @@
 |---|---|---|---|---|
 | Start | H | Level 1: Quiet Farm Town | none (tutorial) | Small Beam: befriend one person |
 | 1 | J | Level 2: Fort Maple | police patrols (3 hits each, whistles) | **Wide Wave** (brain): 3 beams in a 40 degree fan · **Calm Hum** (sneak): people near the alien stop panicking for 4 s · **Friend Trap** (sneak, Hemanth): drop a trap, it befriends everyone near when someone walks by |
-| 2 | K | Level 3: Fort Maple Command | the General (mini boss) + sentries | **Long Beam** (brain): double range, goes through people · **Disguise** (sneak): look like a soldier for 5 s, nobody notices · **Psi Shield** (brain, new): blocks all hits for 4 s |
+| 2 | K | Level 3: Fort Maple Command | the General (mini boss) + sentries | **Long Beam** (brain): 2 hits, double range, goes through people · **Disguise** (sneak): look like a soldier for 5 s, nobody notices · **Psi Shield** (brain, new): a psionic field for 10 s that blocks all hits and gives other skills +1 damage |
 | 3 | L | Level 4: City Centre | army + time limit | **Tractor Beam** (brain): pull everyone in a big circle · **Friend Army** (sneak): friends come back for 8 s and block an exit |
 
 K is in the game (Level 3). L is designed but not built yet (no Level 4).
@@ -33,10 +33,10 @@ Numbers in the game now (playtest and tune):
 | Small Beam (H) | 0.6 s | range 3.5 tiles, first person hit |
 | Wide Wave (J) | 1.2 s | 3 beams at -20/0/20 degrees, range 3.5 tiles, each hits the first person |
 | Calm Hum (J) | 8 s | radius 3 tiles, 4 s: runners stop and settle, lookouts/police in range don't raise the alarm |
-| Friend Trap (J) | 6 s | one trap at a time, goes off when someone is within 1.3 tiles, hits everyone within 3 tiles, lasts 25 s |
-| Long Beam (K) | 1.5 s | twice the beam range, hits everyone in the line |
+| Friend Trap (J) | 6 s | one trap at a time, goes off when someone is within 1.3 tiles, 2 hits to everyone within 3 tiles, lasts 25 s |
+| Long Beam (K) | 1.5 s | twice the beam range, 2 hits to everyone in the line |
 | Disguise (K) | 12 s | 5 s as a soldier: nobody notices, guards and the General ignore the alien; using another skill ends it |
-| Psi Shield (K) | 10 s | 4 s bubble that blocks all damage (the General's darts) |
+| Psi Shield (K) | 20 s | 10 s psionic field: blocks all damage (the General's darts) and every other skill does +1 damage while it is up |
 
 Police officers need 3 hits; every beam or trap hit counts as one.
 
