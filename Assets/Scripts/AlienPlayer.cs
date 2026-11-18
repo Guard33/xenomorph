@@ -130,7 +130,7 @@ public class AlienPlayer : MonoBehaviour
 
     void Update()
     {
-        if (IsDead) { input = Vector2.zero; return; }
+        if (IsDead || PauseMenu.IsOpen) { input = Vector2.zero; return; }
 
         input = ReadMove();
         if (input.sqrMagnitude > 1f)

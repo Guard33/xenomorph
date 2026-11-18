@@ -167,6 +167,7 @@ public class LevelManager : MonoBehaviour
     void Update()
     {
         if (flashTimer > 0f) flashTimer -= Time.deltaTime;
+        if (PauseMenu.IsOpen) return;   // the pause menu handles keys while it is open
 #if ENABLE_INPUT_SYSTEM
         Keyboard kb = Keyboard.current;
         bool restart = kb != null && kb.rKey.wasPressedThisFrame;

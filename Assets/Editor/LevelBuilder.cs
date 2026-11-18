@@ -209,6 +209,13 @@ public static class LevelBuilder
             return t;
         }
 
+        // Tiles covered by wire fence runs: a fence post standing on top of one is stretched down
+        // half a tile so it meets the wire (the wire is drawn in the bottom half of its tile)
+        HashSet<Vector2Int> wireTiles = new HashSet<Vector2Int>();
+        foreach (Obj o in map.Objects)
+            if (o.sprite == "wire_fence")
+                for (int dx = 0; dx < o.w; dx++) wireTiles.Add(new Vector2Int(o.x + dx, o.y));
+
         foreach (Obj o in map.Objects)
         {
             string groupName = o.kind == "building" ? "Buildings" : o.kind == "field" ? "Fields" : o.kind == "tree" ? "Trees"
@@ -220,6 +227,12 @@ public static class LevelBuilder
             go.transform.localScale = Vector3.one * o.Scale;
             SpriteRenderer sr = go.GetComponent<SpriteRenderer>();
             sr.sprite = Piece(o.sprite);
+            if (o.sprite == "fence_post" && sr.sprite != null && wireTiles.Contains(new Vector2Int(o.x, o.y + o.h)))
+            {
+                float tall = sr.sprite.bounds.size.y;
+                go.transform.position += Vector3.down * 0.5f;
+                go.transform.localScale = new Vector3(o.Scale, o.Scale * (tall + 0.5f) / tall, 1f);
+            }
             sr.sortingOrder = o.kind == "field" ? -1500 : (o.kind == "deco" || o.sprite == "fountain_square") ? -1400 : Mathf.RoundToInt(-bottom * 10f);
 
             if (o.kind == "building" || o.kind == "vehicle" || o.kind == "fence")
@@ -315,8 +328,8 @@ public static class LevelBuilder
         body.offset = new Vector2(0f, -0.2f);
         AlienPlayer ap = alien.AddComponent<AlienPlayer>();
         ap.disguiseSprite = Piece("folk_soldier");
-        ap.beamAudio = Sound(alien, "freesound_beam.wav", false, 0.6f);
-        ap.walkingAudio = Sound(alien, "freesound_community-walking-on-the-muddy-road-29586.mp3", true, 0.5f);
+        ap.beamAudio = Sound(alien, "freesound_beam.wav", false, 0.3f);
+        ap.walkingAudio = Sound(alien, "freesound_community-walking-on-the-muddy-road-29586.mp3", true, 0.2f);
         alien.AddComponent<SortByY>();
         if (map.Night)
             AddLight(alien.transform, "Alien glow", Vector2.zero, new Color(0.55f, 1f, 0.6f), 0.55f, 2.6f, 0.3f).transform.localPosition = Vector3.zero;
@@ -340,8 +353,8 @@ public static class LevelBuilder
             {
                 script.holdsPosition = true;
                 TownLookout look = civ.AddComponent<TownLookout>();
-                look.alarm = Sound(civ, "freesound_alarm 1.wav", false, 0.7f);
-                look.gasp = Sound(civ, "freesound_community-gasp-7063.mp3", false, 0.8f);
+                look.alarm = Sound(civ, "freesound_alarm 1.wav", false, 0.35f);
+                look.gasp = Sound(civ, "freesound_community-gasp-7063.mp3", false, 0.4f);
             }
             if (c.IsPolice)
             {

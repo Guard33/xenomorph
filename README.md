@@ -25,7 +25,7 @@ Made by a team of four for **CSCI 3836 (Computer Game Design & Development)** at
 |---|---|---|---|
 | 1. Quiet Farm Town | Daytime farm town (tutorial) | Lookouts ring an alarm | Befriend 10 of 20 |
 | 2. Fort Maple | Town next to an army base, at night | Police and soldiers on patrol (3 hits, alarms) | Befriend 15 of 30 |
-| 3. Fort Maple Command | Deep inside the army base, at night | **The General** (mini boss) shoots darts; sentries | Befriend 14 of 26, survive |
+| 3. Fort Maple Command | Deep inside the army base, at night | **The General** (mini boss) shoots darts; sentries | Befriend 17 of 31, survive |
 | 4. City Centre | *Planned* | Army and a time limit | |
 
 ## Skills
@@ -47,7 +47,9 @@ The alien starts with **H: Small Beam** and picks one new skill on the Evolve sc
 | H J K L | Skills |
 | M | Mini map |
 | R | Restart level |
-| Tab | Stage select (start screen) |
+| Tab | Controls page |
+| Esc | Pause menu (resume, restart, controls, settings, main menu, quit) |
+| S | Stage select (start screen) |
 
 ## Running it
 

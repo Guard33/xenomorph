@@ -1,11 +1,16 @@
 using UnityEngine;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 // Level 1 is the tutorial. This shows one instruction at a time at the top of the screen
-// and moves on when the player has done it (or after a few seconds for tips).
+// and moves on when the player has done it (or after a few seconds for tips). It covers every
+// key and every part of the HUD: moving, aiming, the beam, hit pips, exits, lookouts, the meter,
+// the mini map (M), the controls page (Tab) and the pause menu (Esc).
 // Later levels get a few short hints about what's new.
 public class TutorialGuide : MonoBehaviour
 {
-    enum Step { Move, Beam, Exits, Lookouts, Goal, Done, Intro, NewSkill, Police, Goal2, Done2 }
+    enum Step { Move, Aim, Beam, Pips, Exits, Lookouts, Meter, Goal, Map, Help, Pause, Done, Intro, NewSkill, Police, Goal2, Help2, Done2 }
 
     public int level = 1;
 
@@ -36,11 +41,30 @@ public class TutorialGuide : MonoBehaviour
             case Step.Move:
                 if (alien.DistanceMoved > 3f) Next();
                 break;
+            case Step.Aim:
+                if (stepTime > 5f) Next();
+                break;
             case Step.Beam:
                 if (lm.Friends >= 1) Next();
                 break;
-            case Step.Exits:
+            case Step.Pips:
+            case Step.Meter:
                 if (stepTime > 5f) Next();
+                break;
+            case Step.Exits:
+                if (stepTime > 6f) Next();
+                break;
+            case Step.Map:
+                if (stepTime > 6f || Pressed('M')) Next();
+                break;
+            case Step.Help:
+                if (stepTime > 7f || PauseMenu.IsOpen) Next();
+                break;
+            case Step.Pause:
+                if (stepTime > 6f && !PauseMenu.IsOpen) Next();
+                break;
+            case Step.Help2:
+                if (stepTime > 5f || PauseMenu.IsOpen) Next();
                 break;
             case Step.Lookouts:
                 if (stepTime > 12f || AnyLookoutBefriended()) Next();
@@ -69,6 +93,15 @@ public class TutorialGuide : MonoBehaviour
         stepTime = 0f;
     }
 
+    static bool Pressed(char key)
+    {
+#if ENABLE_INPUT_SYSTEM
+        return Keyboard.current != null && key == 'M' && Keyboard.current.mKey.wasPressedThisFrame;
+#else
+        return key == 'M' && Input.GetKeyDown(KeyCode.M);
+#endif
+    }
+
     bool AnyLookoutBefriended()
     {
         foreach (TownLookout l in lookouts)
@@ -82,10 +115,17 @@ public class TutorialGuide : MonoBehaviour
         switch (step)
         {
             case Step.Move: return "Move with  W A S D";
+            case Step.Aim: return "The green arrow shows where your beam will go";
             case Step.Beam: return "Face someone and press  H  to befriend them";
-            case Step.Exits: return "Scared people run for the exits";
+            case Step.Pips: return "Blue pips over someone = beam hits still needed";
+            case Step.Exits: return "Scared people run for the exits. Too many escape and you lose";
             case Step.Lookouts: return "Yellow circle = lookout. Beam them first!";
-            case Step.Goal: return "Befriend 10 people to evolve";
+            case Step.Meter: return "Each friend fills the friendship meter (bottom left)";
+            case Step.Goal: return "Befriend " + LevelManager.Instance.friendsNeeded + " people to evolve";
+            case Step.Map: return "Press  M  to hide or show the mini map";
+            case Step.Help: return "Press  Tab  any time to see all the controls";
+            case Step.Pause: return "Press  Esc  to pause, change settings or quit";
+            case Step.Help2: return "Tab  shows the controls.  Esc  pauses";
             case Step.Intro: return level >= 3 ? "Fort Maple Command. The General is waiting" : "Fort Maple. The army is on alert tonight";
             case Step.NewSkill: return "New skill: press  " + alien.skills[newSkill].key + "  for " + alien.skills[newSkill].name;
             case Step.Police: return level >= 3 ? "The General shoots darts. Dodge them or hide!" : "Police and soldiers take 3 hits and raise the alarm";

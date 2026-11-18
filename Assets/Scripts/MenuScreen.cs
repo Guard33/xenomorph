@@ -23,6 +23,9 @@ public class MenuScreen : MonoBehaviour
     // Scoreboard screen (start screen only): best number of friends on each level
     private readonly ScoreboardScreen scores = new ScoreboardScreen();
 
+    // Controls (Tab) and Settings pages, shared with the in-level pause menu
+    private bool showControls, showSettings;
+
     struct Stage { public string name, scene; }
 
     static Stage[] Stages()
@@ -46,6 +49,11 @@ public class MenuScreen : MonoBehaviour
         Keyboard kb = Keyboard.current;
         if (kb == null) return;
         if (scores.Open) { scores.HandleKeys(kb); return; }
+        if (showControls || showSettings)
+        {
+            if (kb.escapeKey.wasPressedThisFrame || (showControls && kb.tabKey.wasPressedThisFrame)) showControls = showSettings = false;
+            return;
+        }
         if (stageSelect)
         {
             int count = Stages().Length;
@@ -57,7 +65,8 @@ public class MenuScreen : MonoBehaviour
             if (kb.escapeKey.wasPressedThisFrame) stageSelect = false;
             return;
         }
-        if (kind == Kind.Start && kb.tabKey.wasPressedThisFrame) stageSelect = true;
+        if (kb.tabKey.wasPressedThisFrame) { showControls = true; return; }
+        if (kind == Kind.Start && kb.sKey.wasPressedThisFrame) { stageSelect = true; return; }
         if (kind == Kind.Start && kb.bKey.wasPressedThisFrame) { scores.Open = true; return; }
         if (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame || kb.rKey.wasPressedThisFrame) Play();
         if (kb.escapeKey.wasPressedThisFrame) Back();
@@ -98,6 +107,8 @@ public class MenuScreen : MonoBehaviour
     {
         if (stageSelect) { DrawStageSelect(); return; }
         if (scores.Open) { scores.Draw(); return; }
+        if (showControls) { if (MenuPages.DrawControls(null)) showControls = false; return; }
+        if (showSettings) { if (MenuPages.DrawSettings()) showSettings = false; return; }
         float W = Screen.width, H = Screen.height, k = Hud.Scale;
         bool start = kind == Kind.Start;
 
@@ -111,15 +122,17 @@ public class MenuScreen : MonoBehaviour
               + "\nBest on this level: " + Scoreboard.Best(GameResult.Level) + " friends";
         Hud.Text(new Rect(0, H * 0.34f, W, H * 0.12f), sub, 16, Color.white);
 
-        // The start screen has 4 buttons, so they are a little smaller there
-        float bw = 260f * k, bh = (start ? 48f : 56f) * k, gap = (start ? 12f : 18f) * k;
-        float bx = (W - bw) / 2f, by = start ? H * 0.5f : H * 0.52f;
+        // The start screen has 5 buttons, so they are a little smaller there
+        float bw = 260f * k, bh = (start ? 44f : 56f) * k, gap = (start ? 10f : 18f) * k;
+        float bx = (W - bw) / 2f, by = start ? H * 0.47f : H * 0.52f;
         if (Hud.Button(new Rect(bx, by, bw, bh), start ? "Start" : "Try again", 20)) Play();
         if (start)
         {
             if (Hud.Button(new Rect(bx, by + bh + gap, bw, bh), "Stage select", 20)) stageSelect = true;
             by += bh + gap;
             if (Hud.Button(new Rect(bx, by + bh + gap, bw, bh), "Scoreboard", 20)) scores.Open = true;
+            by += bh + gap;
+            if (Hud.Button(new Rect(bx, by + bh + gap, bw, bh), "Settings", 20)) showSettings = true;
             by += bh + gap;
         }
         if (Hud.Button(new Rect(bx, by + bh + gap, bw, bh), start ? "Quit" : "Main menu", 20)) Back();
@@ -128,7 +141,7 @@ public class MenuScreen : MonoBehaviour
         if (blink)
             Hud.Text(new Rect(0, H * 0.79f, W, 24f * k), start ? "Press Enter to start" : "Press Enter to try again", 14, new Color(1f, 1f, 1f, 0.85f));
         if (start)
-            Hud.Text(new Rect(0, H * 0.87f, W, 24f * k), "WASD move   H beam   M map   R restart   Tab stage select   B scores", 13, new Color(1f, 1f, 1f, 0.7f));
+            Hud.Text(new Rect(0, H * 0.87f, W, 24f * k), "Enter start   S stage select   B scores   Tab controls   Esc quit", 13, new Color(1f, 1f, 1f, 0.7f));
     }
 
     void DrawStageSelect()

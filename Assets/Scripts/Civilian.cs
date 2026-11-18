@@ -248,7 +248,7 @@ public class Civilian : MonoBehaviour
         if (gone) return;
         gone = true;
         if (LevelManager.Instance != null) LevelManager.Instance.PersonBefriended();
-        if (friendshipNoise != null) AudioSource.PlayClipAtPoint(friendshipNoise, Camera.main != null ? Camera.main.transform.position : transform.position);
+        if (friendshipNoise != null) AudioSource.PlayClipAtPoint(friendshipNoise, Camera.main != null ? Camera.main.transform.position : transform.position, 0.35f);
         StartCoroutine(BeamUpToUfo());
     }
 
