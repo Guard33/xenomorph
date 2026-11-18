@@ -20,6 +20,9 @@ public class MenuScreen : MonoBehaviour
     private int selected;                                   // index into Stages()
     private readonly int[] picks = new int[UpgradePath.Tiers.Length];   // skill picked per evolution
 
+    // Scoreboard screen (start screen only): best number of friends on each level
+    private readonly ScoreboardScreen scores = new ScoreboardScreen();
+
     struct Stage { public string name, scene; }
 
     static Stage[] Stages()
@@ -42,6 +45,7 @@ public class MenuScreen : MonoBehaviour
 #if ENABLE_INPUT_SYSTEM
         Keyboard kb = Keyboard.current;
         if (kb == null) return;
+        if (scores.Open) { scores.HandleKeys(kb); return; }
         if (stageSelect)
         {
             int count = Stages().Length;
@@ -54,6 +58,7 @@ public class MenuScreen : MonoBehaviour
             return;
         }
         if (kind == Kind.Start && kb.tabKey.wasPressedThisFrame) stageSelect = true;
+        if (kind == Kind.Start && kb.bKey.wasPressedThisFrame) { scores.Open = true; return; }
         if (kb.enterKey.wasPressedThisFrame || kb.spaceKey.wasPressedThisFrame || kb.rKey.wasPressedThisFrame) Play();
         if (kb.escapeKey.wasPressedThisFrame) Back();
 #else
@@ -92,6 +97,7 @@ public class MenuScreen : MonoBehaviour
     void OnGUI()
     {
         if (stageSelect) { DrawStageSelect(); return; }
+        if (scores.Open) { scores.Draw(); return; }
         float W = Screen.width, H = Screen.height, k = Hud.Scale;
         bool start = kind == Kind.Start;
 
@@ -101,24 +107,28 @@ public class MenuScreen : MonoBehaviour
 
         string sub = start
             ? "A lonely alien crash-lands on Earth.\nBrainwash the people before they escape!"
-            : GameResult.Reason + "\nFriends " + GameResult.Friends + "/" + GameResult.Needed + "   Escaped " + GameResult.Escaped;
+            : GameResult.Reason + "\nFriends " + GameResult.Friends + "/" + GameResult.Needed + "   Escaped " + GameResult.Escaped
+              + "\nBest on this level: " + Scoreboard.Best(GameResult.Level) + " friends";
         Hud.Text(new Rect(0, H * 0.34f, W, H * 0.12f), sub, 16, Color.white);
 
-        float bw = 260f * k, bh = 56f * k;
-        float bx = (W - bw) / 2f, by = H * 0.52f;
+        // The start screen has 4 buttons, so they are a little smaller there
+        float bw = 260f * k, bh = (start ? 48f : 56f) * k, gap = (start ? 12f : 18f) * k;
+        float bx = (W - bw) / 2f, by = start ? H * 0.5f : H * 0.52f;
         if (Hud.Button(new Rect(bx, by, bw, bh), start ? "Start" : "Try again", 20)) Play();
         if (start)
         {
-            if (Hud.Button(new Rect(bx, by + bh + 18f * k, bw, bh), "Stage select", 20)) stageSelect = true;
-            by += bh + 18f * k;
+            if (Hud.Button(new Rect(bx, by + bh + gap, bw, bh), "Stage select", 20)) stageSelect = true;
+            by += bh + gap;
+            if (Hud.Button(new Rect(bx, by + bh + gap, bw, bh), "Scoreboard", 20)) scores.Open = true;
+            by += bh + gap;
         }
-        if (Hud.Button(new Rect(bx, by + bh + 18f * k, bw, bh), start ? "Quit" : "Main menu", 20)) Back();
+        if (Hud.Button(new Rect(bx, by + bh + gap, bw, bh), start ? "Quit" : "Main menu", 20)) Back();
 
         bool blink = Mathf.Repeat(Time.unscaledTime, 1.2f) < 0.8f;
         if (blink)
             Hud.Text(new Rect(0, H * 0.79f, W, 24f * k), start ? "Press Enter to start" : "Press Enter to try again", 14, new Color(1f, 1f, 1f, 0.85f));
         if (start)
-            Hud.Text(new Rect(0, H * 0.87f, W, 24f * k), "WASD move   H beam   M map   R restart   Tab stage select", 13, new Color(1f, 1f, 1f, 0.7f));
+            Hud.Text(new Rect(0, H * 0.87f, W, 24f * k), "WASD move   H beam   M map   R restart   Tab stage select   B scores", 13, new Color(1f, 1f, 1f, 0.7f));
     }
 
     void DrawStageSelect()
@@ -180,6 +190,7 @@ public static class GameResult
 {
     public static string Reason = "Too many people escaped!";
     public static string Scene = "Level1";   // the level that was lost
+    public static int Level = 1;             // its number, for the scoreboard
     public static int Friends;
     public static int Escaped;
     public static int Needed = 10;
