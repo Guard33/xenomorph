@@ -46,11 +46,12 @@ public static class UpgradePath
         },
         new Tier
         {
-            stage = 3, key = "K", nextLevel = "Level 3: Downtown", threat = "Soldiers",
+            stage = 3, key = "K", nextLevel = "Level 3: Fort Maple Command", threat = "The General (mini boss)", scene = "Level3",
             options = new[]
             {
                 new Option { id = "long_beam", name = "Long Beam", line1 = "Double range", line2 = "through people", icon = "long_beam", brainPath = true },
                 new Option { id = "disguise", name = "Disguise", line1 = "Look human", line2 = "for 5 seconds", icon = "disguise", brainPath = false },
+                new Option { id = "psi_shield", name = "Psi Shield", line1 = "Blocks all hits", line2 = "for 4 seconds", icon = "psi_shield", brainPath = true },
             },
         },
         new Tier

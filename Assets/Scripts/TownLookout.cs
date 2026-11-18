@@ -38,7 +38,7 @@ public class TownLookout : MonoBehaviour
     }
 
     public bool AlienInView =>
-        alien != null && Vector2.Distance(alien.position, transform.position) < watchRadius;
+        alien != null && !AlienPlayer.Disguised && Vector2.Distance(alien.position, transform.position) < watchRadius;
 
     void Update()
     {

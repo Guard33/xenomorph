@@ -95,6 +95,8 @@ public class UpgradeScreen : MonoBehaviour
             ? "Your alien's upgrade path is complete"
             : "Stage " + UpgradePath.Tiers[next].stage + " of 4: pick one new skill for " + UpgradePath.Tiers[next].key;
         Hud.Text(new Rect(0, 102f * k, W, 22f * k), sub, 15, Color.white);
+        if (!done)
+            Hud.Text(new Rect(0, 126f * k, W, 20f * k), "Evolving also gives +1 max HP, a longer beam and more speed", 12, new Color(1f, 0.9f, 0.5f, 0.85f));
 
         // Tree layout: start node, then one column per evolution (2 or 3 cards each)
         float cardW = 300f * k, cardH = 112f * k, colGap = 70f * k, rowGap = 22f * k;

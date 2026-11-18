@@ -24,5 +24,9 @@ Art/Level2Pieces:
   street_lamp, flood_light and road_00-15 (asphalt) were made for the Level 2 night
   by Tools/make_level2_art.py (the roads reuse the shapes of the Level 1 dirt roads).
 
+Art/Level3Pieces:
+  folk_general: the General (Level 3 mini boss), a recolour of folk_soldier, made by
+  Tools/make_level3_art.py (which also makes the Psi Shield icon in Resources/Upgrades).
+
 Art/Alien:
   alien_idle_0/1 - green slime alien (2-frame idle bounce). Found by Talia.

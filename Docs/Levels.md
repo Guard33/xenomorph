@@ -12,6 +12,8 @@ Levels are generated, not hand-edited. Each level's map (ground, roads, objects,
 | Scene | `Assets/Scenes/Level1.unity` | `Assets/Scenes/Level2.unity` |
 | Rebuild | menu **Alien Game > Build Level 1** | menu **Alien Game > Build Level 2** |
 
+Level 3 works the same way: `Assets/Scripts/Level3Data.cs`, written by `Tools/level3_design.py`, menu **Alien Game > Build Level 3**. `Tools/make_level3_art.py` makes the General sprite and the Psi Shield icon.
+
 - The builder is `Assets/Editor/LevelBuilder.cs`. Rebuilding overwrites the scene, so change the data file, not the scene.
 - `Tools/level2_design.py` checks the Level 2 layout (no overlaps, nothing on roads or water, everyone can reach an exit, patrol routes on open ground), prints a text map and writes `Level2Data.cs`:
   ```
@@ -44,6 +46,20 @@ To play: open `Assets/Scenes/StartScreen.unity`, press Play, then Enter. **Stage
 - Befriend 15 to fill the meter.
 - Played after Level 1 and the Evolve screen. Pressing Play in `Level2.unity` directly gives J = Wide Wave.
 
+## Level 3: Fort Maple Command (mini boss)
+
+- 56 x 34 map deep inside the army base, at night. The story is at the top of `Tools/level3_design.py`:
+  - **South gate** (start) by the **motor pool**; **supply depot and ammo dump**; **barracks** on a lawn.
+  - **Command compound** (walled): HQ, flag offices, command centre and bunker around the parade ground. Exit A is the north gate behind HQ.
+  - **Training ground** with sandbag firing lines; **airfield** with hangars, aircraft and the runway. Exit B is the east gate.
+- **The General** (mini boss) paces the parade ground. Drawn at 2x, 12 hits, health bar at the top of the screen.
+  - He shoots tranquilliser darts at the alien when it is within 7.5 tiles (1 damage each). Buildings stop darts.
+  - Below 2/3 health he sounds the base alarm and fires 3-dart spreads; below 1/3 he alarms again and fires faster.
+  - Disguise hides the alien from him; Psi Shield blocks his darts.
+- The alien **can be defeated** in this level (7 HP at stage 3). Game over says the General's darts knocked it out.
+- 22 people: 12 base staff, 4 sentries (stand guard like lookouts, 2 hits), 5 patrolling soldiers (3 hits) and the General.
+- Befriend 12 to fill the meter. Played after Level 2 and the second Evolve screen (the K skill). Pressing Play in `Level3.unity` directly gives J = Wide Wave and K = Long Beam.
+
 ## Controls
 
 | Key | Action |
@@ -51,6 +67,7 @@ To play: open `Assets/Scenes/StartScreen.unity`, press Play, then Enter. **Stage
 | W A S D | move |
 | H | Small Beam: befriends the first person in front of the alien |
 | J | skill picked on the Evolve screen (Wide Wave, Calm Hum or Friend Trap) |
-| K L | later skills (locked) |
+| K | skill picked on the second Evolve screen (Long Beam, Disguise or Psi Shield) |
+| L | later skill (locked) |
 | M | show / hide the mini map |
 | R | restart the level |

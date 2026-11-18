@@ -68,9 +68,9 @@ public class LevelManager : MonoBehaviour
         CheckComplete();
     }
 
-    public void AlienDied()
+    public void AlienDied(string reason = null)
     {
-        if (!won) Lose("The alien was defeated!");
+        if (!won) Lose(reason ?? "The alien was defeated!");
     }
 
     // Nobody left on the map to brainwash: end the level

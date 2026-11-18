@@ -8,6 +8,7 @@ public class LevelInfo : MonoBehaviour
 
     // When testing Level 2 straight from the editor (no evolve screen), J uses this skill
     public string defaultJSkill = "wide_wave";
+    public string defaultKSkill = "long_beam";   // same for K when testing Level 3 directly
 
     public static LevelInfo Instance { get; private set; }
 

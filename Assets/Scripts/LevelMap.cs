@@ -20,6 +20,7 @@ public class LevelMap
     public int FriendsNeeded = 10;
     public bool Night;                     // dark sky, lamps and floodlights light the map
     public string RoadTiles = "path_";     // road pieces: "path_" dirt (Level 1) or "road_" asphalt
+    public bool AlienCanDie;               // something on this level can defeat the alien (Level 3: the General)
 
     static LevelMap current;
 
@@ -30,7 +31,7 @@ public class LevelMap
         set => current = value;
     }
 
-    public static LevelMap ByNumber(int level) => level == 2 ? Level2Data.Map : Level1Data.Map;
+    public static LevelMap ByNumber(int level) => level == 3 ? Level3Data.Map : level == 2 ? Level2Data.Map : Level1Data.Map;
 }
 
 // An object on the map. x, y = top-left tile; w, h = size in tiles.
@@ -44,11 +45,14 @@ public struct Obj
 }
 
 // A person on the map. lookout = raises the alarm instead of running.
-// patrol >= 0 = a police officer walking that patrol route (tougher, never runs).
+// patrol >= 0 = a police officer / soldier walking that patrol route (tougher, never runs).
+// boss = the level's mini boss (Level 3: the General), who walks the patrol route and fights back.
+// toughness = beam hits needed (0 = the default: 1, police 3, boss 12).
 public struct Civ
 {
-    public string sprite; public int x, y; public bool lookout; public int patrol;
-    public Civ(string s, int x, int y, bool lookout = false) { sprite = s; this.x = x; this.y = y; this.lookout = lookout; patrol = -1; }
+    public string sprite; public int x, y; public bool lookout; public int patrol; public bool boss; public int toughness;
+    public Civ(string s, int x, int y, bool lookout = false) { sprite = s; this.x = x; this.y = y; this.lookout = lookout; patrol = -1; boss = false; toughness = 0; }
     public static Civ Police(string s, int x, int y, int patrol) => new Civ(s, x, y) { patrol = patrol };
-    public bool IsPolice => patrol >= 0;
+    public static Civ Boss(string s, int x, int y, int patrol) => new Civ(s, x, y) { patrol = patrol, boss = true };
+    public bool IsPolice => patrol >= 0 && !boss;
 }

@@ -13,6 +13,7 @@ public class TutorialGuide : MonoBehaviour
     private float stepTime;
     private AlienPlayer alien;
     private TownLookout[] lookouts;
+    private int newSkill = 1;
 
     public string CurrentStepName => step.ToString();
 
@@ -20,6 +21,7 @@ public class TutorialGuide : MonoBehaviour
     {
         if (level >= 2) step = Step.Intro;
         alien = FindFirstObjectByType<AlienPlayer>();
+        newSkill = level >= 3 ? 2 : 1;   // the skill this level's evolution unlocked (J or K)
         lookouts = FindObjectsByType<TownLookout>(FindObjectsSortMode.None);
     }
 
@@ -50,7 +52,7 @@ public class TutorialGuide : MonoBehaviour
                 if (stepTime > 4f) Next();
                 break;
             case Step.NewSkill:
-                if (stepTime > 10f || !alien.skills[1].Ready) Next();
+                if (stepTime > 10f || !alien.skills[newSkill].Ready) Next();
                 break;
             case Step.Police:
                 if (stepTime > 7f) Next();
@@ -84,9 +86,9 @@ public class TutorialGuide : MonoBehaviour
             case Step.Exits: return "Scared people run for the exits";
             case Step.Lookouts: return "Yellow circle = lookout. Beam them first!";
             case Step.Goal: return "Befriend 10 people to evolve";
-            case Step.Intro: return "Fort Maple. The army is on alert tonight";
-            case Step.NewSkill: return "New skill: press  J  for " + alien.skills[1].name;
-            case Step.Police: return "Police and soldiers take 3 hits and raise the alarm";
+            case Step.Intro: return level >= 3 ? "Fort Maple Command. The General is waiting" : "Fort Maple. The army is on alert tonight";
+            case Step.NewSkill: return "New skill: press  " + alien.skills[newSkill].key + "  for " + alien.skills[newSkill].name;
+            case Step.Police: return level >= 3 ? "The General shoots darts. Dodge them or hide!" : "Police and soldiers take 3 hits and raise the alarm";
             case Step.Goal2: return "Befriend " + LevelManager.Instance.friendsNeeded + " people to evolve";
         }
         return null;

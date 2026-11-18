@@ -57,7 +57,7 @@ public class PolicePatrol : MonoBehaviour
             return;
         }
 
-        bool seesAlien = alien != null && Vector2.Distance(alien.position, transform.position) < watchRadius;
+        bool seesAlien = alien != null && !AlienPlayer.Disguised && Vector2.Distance(alien.position, transform.position) < watchRadius;
         if (cooldown > 0f) cooldown -= Time.deltaTime;
 
         if (seesAlien && cooldown <= 0f && !civ.IsCalm)

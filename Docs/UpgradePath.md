@@ -19,10 +19,12 @@
 |---|---|---|---|---|
 | Start | H | Level 1: Quiet Farm Town | none (tutorial) | Small Beam: befriend one person |
 | 1 | J | Level 2: Fort Maple | police patrols (3 hits each, whistles) | **Wide Wave** (brain): 3 beams in a 40 degree fan · **Calm Hum** (sneak): people near the alien stop panicking for 4 s · **Friend Trap** (sneak, Hemanth): drop a trap, it befriends everyone near when someone walks by |
-| 2 | K | Level 3: Downtown | soldiers | **Long Beam** (brain): double range, goes through people · **Disguise** (sneak): look human for 5 s, nobody runs |
+| 2 | K | Level 3: Fort Maple Command | the General (mini boss) + sentries | **Long Beam** (brain): double range, goes through people · **Disguise** (sneak): look like a soldier for 5 s, nobody notices · **Psi Shield** (brain, new): blocks all hits for 4 s |
 | 3 | L | Level 4: City Centre | army + time limit | **Tractor Beam** (brain): pull everyone in a big circle · **Friend Army** (sneak): friends come back for 8 s and block an exit |
 
-K and L are designed but not in the game yet (no Level 3 / 4).
+K is in the game (Level 3). L is designed but not built yet (no Level 4).
+
+Every evolution also makes the alien stronger: **+1 max HP, +0.5 tiles of beam range and 6% more speed** (Level 3 alien: 7 HP, 4.5-tile beam).
 
 Numbers in the game now (playtest and tune):
 
@@ -32,10 +34,13 @@ Numbers in the game now (playtest and tune):
 | Wide Wave (J) | 1.2 s | 3 beams at -20/0/20 degrees, range 3.5 tiles, each hits the first person |
 | Calm Hum (J) | 8 s | radius 3 tiles, 4 s: runners stop and settle, lookouts/police in range don't raise the alarm |
 | Friend Trap (J) | 6 s | one trap at a time, goes off when someone is within 1.3 tiles, hits everyone within 3 tiles, lasts 25 s |
+| Long Beam (K) | 1.5 s | twice the beam range, hits everyone in the line |
+| Disguise (K) | 12 s | 5 s as a soldier: nobody notices, guards and the General ignore the alien; using another skill ends it |
+| Psi Shield (K) | 10 s | 4 s bubble that blocks all damage (the General's darts) |
 
 Police officers need 3 hits; every beam or trap hit counts as one.
 
-Ideas for later (not built): **+1 max HP** every evolution and the alien sprite gets bigger (Talia's stage sprites).
+Alien stage models: put the frames for stage N in `Assets/Resources/Alien/stageN/` and that level uses them (see the README there). Until a model exists, the slime is drawn a little bigger each stage.
 
 ## In Unity
 

@@ -16,7 +16,7 @@ public static class LevelBuilder
     const string TemplateScene = "Assets/Scenes/SampleScene.unity";
 
     // Sprites placed on the map; looked up in this order
-    static readonly string[] PieceFolders = { "Assets/Art/Level1Pieces", "Assets/Art/Level2Pieces", "Assets/Art/Military" };
+    static readonly string[] PieceFolders = { "Assets/Art/Level1Pieces", "Assets/Art/Level2Pieces", "Assets/Art/Level3Pieces", "Assets/Art/Military" };
     static readonly string[] CenterPivot = { "grass", "water", "path_", "bridge", "folk_", "alien", "heart", "exit_marker", "ground_", "road_" };
 
     [MenuItem("Alien Game/Build Level 1")]
@@ -24,6 +24,9 @@ public static class LevelBuilder
 
     [MenuItem("Alien Game/Build Level 2")]
     public static void BuildLevel2() => BuildLevel(2);
+
+    [MenuItem("Alien Game/Build Level 3")]
+    public static void BuildLevel3() => BuildLevel(3);
 
     public static void BuildLevel(int level)
     {
@@ -294,7 +297,7 @@ public static class LevelBuilder
         CircleCollider2D body = alien.GetComponent<CircleCollider2D>();
         body.radius = 0.3f;
         body.offset = new Vector2(0f, -0.2f);
-        alien.AddComponent<AlienPlayer>();
+        alien.AddComponent<AlienPlayer>().disguiseSprite = Piece("folk_soldier");
         alien.AddComponent<SortByY>();
         if (map.Night)
             AddLight(alien.transform, "Alien glow", Vector2.zero, new Color(0.55f, 1f, 0.6f), 0.55f, 2.6f, 0.3f).transform.localPosition = Vector3.zero;
@@ -305,7 +308,8 @@ public static class LevelBuilder
         int i = 1;
         foreach (Civ c in map.Civilians)
         {
-            string label = c.IsPolice ? (c.sprite == "folk_soldier" ? "Soldier " : "Police ") : c.lookout ? "Lookout " : "Civilian ";
+            string label = c.boss ? "Boss " : c.IsPolice ? (c.sprite == "folk_soldier" ? "Soldier " : "Police ")
+                         : c.lookout ? (c.sprite == "folk_soldier" ? "Sentry " : "Lookout ") : "Civilian ";
             GameObject civ = new GameObject(label + i++ + " (" + c.sprite.Substring(5) + ")", typeof(SpriteRenderer));
             civ.transform.SetParent(people);
             civ.transform.position = RoadNetwork.TileCenter(new Vector2Int(c.x, c.y));
@@ -323,6 +327,15 @@ public static class LevelBuilder
                 script.toughness = 3;
                 civ.AddComponent<PolicePatrol>().patrol = c.patrol;
             }
+            if (c.boss)
+            {
+                // The mini boss: drawn at 2x, 12 hits, health bar on the HUD, fights back
+                script.holdsPosition = true;
+                script.toughness = 12;
+                civ.transform.localScale = Vector3.one * 2f;
+                civ.AddComponent<GeneralBoss>().patrol = c.patrol;
+            }
+            if (c.toughness > 0) script.toughness = c.toughness;
             civ.AddComponent<SortByY>();
         }
 
@@ -330,6 +343,7 @@ public static class LevelBuilder
         LevelManager lm = new GameObject("Level Manager").AddComponent<LevelManager>();
         lm.totalPeople = map.Civilians.Length;
         lm.friendsNeeded = map.FriendsNeeded;
+        lm.alienCanDie = map.AlienCanDie;
         new GameObject("Tutorial Guide").AddComponent<TutorialGuide>().level = level;
         new GameObject("Mini Map").AddComponent<MiniMap>();
 

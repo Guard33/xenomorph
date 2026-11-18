@@ -6,8 +6,11 @@ using UnityEngine.InputSystem;
 // The alien the player controls.
 // W A S D move up, left, down, right. H J K L are the four skill slots.
 // Level 1 only has H (Small Beam). After Level 1 the player picks a J skill on the
-// Evolve screen: Wide Wave, Calm Hum or Friend Trap. K and L come later.
-// The sprite is a placeholder (a dark villager) until our real alien art is ready.
+// Evolve screen (Wide Wave, Calm Hum or Friend Trap), after Level 2 a K skill
+// (Long Beam, Disguise or Psi Shield). L comes later.
+// Every evolution also makes the alien stronger: +1 max HP, a longer beam and a bit more speed.
+// Stage sprites: put the frames for stage N in Assets/Resources/Alien/stageN/ and that level
+// uses them automatically (e.g. stage2 for Level 2). Until then the slime is drawn a little bigger.
 [RequireComponent(typeof(Rigidbody2D))]
 public class AlienPlayer : MonoBehaviour
 {
@@ -32,7 +35,15 @@ public class AlienPlayer : MonoBehaviour
     public float beamRange = 3.5f;      // tiles
     public float beamWidth = 0.9f;      // tiles
 
+    [Header("Disguise")]
+    public Sprite disguiseSprite;       // what the alien looks like while disguised (a soldier)
+
     public int Hp { get; private set; }
+    public int Stage { get; private set; } = 1;
+
+    // Disguise: nobody notices the alien. Psi Shield: no damage.
+    public static bool Disguised { get; private set; }
+    public bool Shielded => shieldTimer > 0f;
     public bool IsDead => Hp <= 0;
     public Vector2 Facing { get; private set; } = Vector2.down;
     public float DistanceMoved { get; private set; }
@@ -41,11 +52,17 @@ public class AlienPlayer : MonoBehaviour
     private SpriteRenderer sr;
     private Vector2 input;
     private float hurtFlash;
+    private float disguiseTimer, shieldTimer;
+    private SpriteFlipbook flipbook;
+    private Sprite normalSprite;
+    private SpriteRenderer shieldBubble;
 
     void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
+        flipbook = GetComponent<SpriteFlipbook>();
+        Disguised = false;
         Hp = maxHp;
     }
 
@@ -53,9 +70,39 @@ public class AlienPlayer : MonoBehaviour
     {
         // J is the skill picked on the Evolve screen after Level 1.
         // Testing Level 2 straight from the editor (nothing picked) uses the level's default.
+        int level = LevelInfo.Instance != null ? LevelInfo.Instance.level : 1;
         string j = UpgradePath.PickedId(0);
-        if (j == null && LevelInfo.Instance != null && LevelInfo.Instance.level >= 2) j = LevelInfo.Instance.defaultJSkill;
+        if (j == null && level >= 2) j = LevelInfo.Instance.defaultJSkill;
         if (j != null) SetSkill(1, j);
+        string k = UpgradePath.PickedId(1);
+        if (k == null && level >= 3) k = LevelInfo.Instance.defaultKSkill;
+        if (k != null) SetSkill(2, k);
+
+        // Each level is one evolution stage further: the alien grows stronger
+        Stage = Mathf.Max(1, level);
+        int ups = Stage - 1;
+        maxHp += ups;
+        Hp = maxHp;
+        beamRange += 0.5f * ups;
+        moveSpeed *= 1f + 0.06f * ups;
+        UseStageSprites();
+    }
+
+    // Frames for this stage from Resources/Alien/stageN (falls back to the slime, drawn bigger)
+    void UseStageSprites()
+    {
+        Sprite[] frames = null;
+        for (int st = Stage; st >= 2 && (frames == null || frames.Length == 0); st--)
+            frames = Resources.LoadAll<Sprite>("Alien/stage" + st);
+        if (frames != null && frames.Length > 0)
+        {
+            System.Array.Sort(frames, (a, b) => string.CompareOrdinal(a.name, b.name));
+            if (flipbook != null) flipbook.frames = frames;
+            if (sr != null) sr.sprite = frames[0];
+        }
+        else if (Stage > 1)
+            transform.localScale = Vector3.one * (1f + 0.12f * (Stage - 1));
+        normalSprite = sr != null ? sr.sprite : null;
     }
 
     // Put a skill on a key (by its UpgradePath id)
@@ -66,7 +113,8 @@ public class AlienPlayer : MonoBehaviour
         s.id = id;
         s.name = o != null ? o.name : id;
         s.unlocked = true;
-        s.cooldown = id == "wide_wave" ? 1.2f : id == "calm_hum" ? 8f : id == "friend_trap" ? 6f : 1f;
+        s.cooldown = id == "wide_wave" ? 1.2f : id == "calm_hum" ? 8f : id == "friend_trap" ? 6f
+                   : id == "long_beam" ? 1.5f : id == "disguise" ? 12f : id == "psi_shield" ? 10f : 1f;
         s.timer = 0f;
     }
 
@@ -95,6 +143,22 @@ public class AlienPlayer : MonoBehaviour
             hurtFlash -= Time.deltaTime;
             if (sr != null) sr.color = hurtFlash > 0f ? new Color(1f, 0.4f, 0.4f) : Color.white;
         }
+
+        if (disguiseTimer > 0f)
+        {
+            disguiseTimer -= Time.deltaTime;
+            if (disguiseTimer <= 0f) EndDisguise();
+        }
+        if (shieldTimer > 0f)
+        {
+            shieldTimer -= Time.deltaTime;
+            if (shieldBubble != null)
+            {
+                // blinks during the last second so the player knows it is about to drop
+                float a = shieldTimer < 1f && Mathf.Repeat(shieldTimer * 8f, 1f) < 0.5f ? 0.15f : 0.45f;
+                shieldBubble.color = new Color(0.75f, 0.5f, 1f, shieldTimer > 0f ? a : 0f);
+            }
+        }
     }
 
     void FixedUpdate()
@@ -117,10 +181,77 @@ public class AlienPlayer : MonoBehaviour
         if (!s.Ready) return;
         s.Use();
 
+        // Using any other skill gives the disguise away
+        if (Disguised && s.id != "disguise") EndDisguise();
+
         if (slot == 0) FireSmallBeam();
         else if (s.id == "wide_wave") FireWideWave();
         else if (s.id == "calm_hum") CalmHum();
         else if (s.id == "friend_trap") FriendTrap.Place(transform.position);
+        else if (s.id == "long_beam") FireLongBeam();
+        else if (s.id == "disguise") StartDisguise();
+        else if (s.id == "psi_shield") RaiseShield();
+    }
+
+    // K option: Long Beam (Danesh) - double range, goes through people and hits everyone in the line
+    public int FireLongBeam()
+    {
+        Vector2 origin = transform.position;
+        float range = beamRange * 2f;
+        BeamEffect.Spawn(origin, Facing, range, beamWidth, new Color(0.4f, 0.9f, 1f, 0.9f));
+        int hits = 0;
+        foreach (Civilian c in Civilian.All.ToArray())
+            if (c.CanBeBefriended && InLine(origin, Facing, range, beamWidth, c.transform.position)) { c.Hit(); hits++; }
+        return hits;
+    }
+
+    // K option: Disguise (Danesh) - look like a soldier for 5 seconds: nobody notices the alien,
+    // guards don't raise the alarm and the General doesn't shoot. Using another skill ends it.
+    public void StartDisguise()
+    {
+        Disguised = true;
+        disguiseTimer = 5f;
+        if (flipbook != null) flipbook.enabled = false;
+        if (sr != null && disguiseSprite != null) sr.sprite = disguiseSprite;
+        Puff(new Color(0.75f, 0.85f, 0.6f, 0.5f));
+        if (LevelManager.Instance != null) LevelManager.Instance.Flash("Disguised!", 1.2f);
+    }
+
+    public void EndDisguise()
+    {
+        if (!Disguised) return;
+        Disguised = false;
+        disguiseTimer = 0f;
+        if (flipbook != null) flipbook.enabled = true;
+        if (sr != null && normalSprite != null) sr.sprite = normalSprite;
+        Puff(new Color(0.75f, 0.85f, 0.6f, 0.5f));
+    }
+
+    // K option: Psi Shield (new) - a bubble that blocks all damage for 4 seconds
+    public void RaiseShield()
+    {
+        shieldTimer = 4f;
+        if (shieldBubble == null)
+        {
+            GameObject b = new GameObject("Psi Shield");
+            b.transform.SetParent(transform, false);
+            b.transform.localScale = Vector3.one * 1.5f / Mathf.Max(0.01f, transform.localScale.x);
+            shieldBubble = b.AddComponent<SpriteRenderer>(); Glow.Unlit(shieldBubble);
+            shieldBubble.sprite = TownLookout.CircleSprite();
+            shieldBubble.sortingOrder = 29000;
+        }
+        shieldBubble.color = new Color(0.75f, 0.5f, 1f, 0.45f);
+    }
+
+    void Puff(Color c)
+    {
+        GameObject pulse = new GameObject("Puff");
+        pulse.transform.position = transform.position;
+        pulse.transform.localScale = Vector3.one * 1.6f;
+        SpriteRenderer p = pulse.AddComponent<SpriteRenderer>(); Glow.Unlit(p);
+        p.sprite = TownLookout.CircleSprite();
+        p.sortingOrder = 29000;
+        BeamEffect.FadeOut(p, c, 0.4f);
     }
 
     // A short straight beam in the direction the alien is facing.
@@ -190,17 +321,20 @@ public class AlienPlayer : MonoBehaviour
     }
 
     // ------------------------------------------------------------------ health
-    public void TakeDamage(int amount)
+    // Returns false if the hit did nothing (already dead, or blocked by the Psi Shield)
+    public bool TakeDamage(int amount, string reason = null)
     {
-        if (IsDead || amount <= 0) return;
+        if (IsDead || amount <= 0) return false;
+        if (Shielded) return false;
         bool canDie = LevelManager.Instance == null || LevelManager.Instance.alienCanDie;
         Hp = Mathf.Max(canDie ? 0 : 1, Hp - amount);
         hurtFlash = 0.2f;
         if (IsDead)
         {
             rb.linearVelocity = Vector2.zero;
-            if (LevelManager.Instance != null) LevelManager.Instance.AlienDied();
+            if (LevelManager.Instance != null) LevelManager.Instance.AlienDied(reason);
         }
+        return true;
     }
 
     public void Heal(int amount)

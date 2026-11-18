@@ -17,6 +17,7 @@ public class Civilian : MonoBehaviour
     public Sprite heartSprite;
     public bool holdsPosition;         // lookouts and police don't run away
     public int toughness = 1;          // beam hits needed to befriend (police: 3)
+    public bool hidePips;              // the boss shows a health bar on the HUD instead
 
     public bool IsAlerted => alerted;
     public bool IsCalm => calm > 0f;
@@ -52,7 +53,7 @@ public class Civilian : MonoBehaviour
         AlienPlayer player = FindFirstObjectByType<AlienPlayer>();
         if (player != null) alien = player.transform;
         waitTimer = Random.Range(0.5f, 2.5f);
-        if (toughness > 1) MakePips();
+        if (toughness > 1 && !hidePips) MakePips();
     }
 
     void Update()
@@ -67,7 +68,7 @@ public class Civilian : MonoBehaviour
             if (sr != null) sr.color = hitFlash > 0f ? new Color(0.6f, 1f, 0.7f) : Color.white;
         }
 
-        if (!alerted && !holdsPosition && alien != null &&
+        if (!alerted && !holdsPosition && alien != null && !AlienPlayer.Disguised &&
             Vector2.Distance(alien.position, transform.position) < alertRadius)
             Alert();
 

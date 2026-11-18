@@ -8,7 +8,9 @@ public class PixelArtImporter : AssetPostprocessor
 {
     void OnPreprocessTexture()
     {
-        if (!assetPath.StartsWith("Assets/Art/") || assetPath.StartsWith("Assets/Art/Screens/")) return;
+        bool art = assetPath.StartsWith("Assets/Art/") && !assetPath.StartsWith("Assets/Art/Screens/");
+        bool alienStage = assetPath.StartsWith("Assets/Resources/Alien/");   // stage models (see AlienPlayer)
+        if (!art && !alienStage) return;
         if (!assetImporter.importSettingsMissing) return;   // only first import; don't override later manual changes
 
         TextureImporter ti = (TextureImporter)assetImporter;

@@ -25,18 +25,18 @@ Made by a team of four for **CSCI 3836 (Computer Game Design & Development)** at
 |---|---|---|---|
 | 1. Quiet Farm Town | Daytime farm town (tutorial) | Lookouts ring an alarm | Befriend 10 of 20 |
 | 2. Fort Maple | Town next to an army base, at night | Police and soldiers on patrol (3 hits, alarms) | Befriend 15 of 30 |
-| 3. Downtown | *Planned* | Soldiers | |
+| 3. Fort Maple Command | Deep inside the army base, at night | **The General** (mini boss) shoots darts; sentries | Befriend 12 of 22, survive |
 | 4. City Centre | *Planned* | Army and a time limit | |
 
 ## Skills
 
-The alien starts with **H: Small Beam** and picks one new skill on the Evolve screen after each level.
+The alien starts with **H: Small Beam** and picks one new skill on the Evolve screen after each level. Every evolution also gives +1 max HP, a longer beam and more speed.
 
 | Key | Choices |
 |---|---|
 | H | Small Beam: befriend the first person in front of you |
 | J | **Wide Wave**: 3 beams in a fan · **Calm Hum**: nearby people stop panicking and guards can't raise the alarm · **Friend Trap**: a trap that befriends everyone near it when someone walks by |
-| K | Long Beam · Disguise *(designed, not built yet)* |
+| K | **Long Beam**: double range, through people · **Disguise**: look like a soldier, nobody notices · **Psi Shield**: blocks all hits for 4 s |
 | L | Tractor Beam · Friend Army *(designed, not built yet)* |
 
 ## Controls
