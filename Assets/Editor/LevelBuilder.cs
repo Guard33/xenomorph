@@ -106,6 +106,22 @@ public static class LevelBuilder
         AssetDatabase.Refresh();
     }
 
+    // Talia's sounds in Assets/Art/Audio
+    static AudioClip Clip(string file) => AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Art/Audio/" + file);
+
+    static AudioSource Sound(GameObject go, string file, bool loop, float volume)
+    {
+        AudioClip clip = Clip(file);
+        if (clip == null) return null;
+        AudioSource a = go.AddComponent<AudioSource>();
+        a.clip = clip;
+        a.loop = loop;
+        a.volume = volume;
+        a.playOnAwake = false;
+        a.spatialBlend = 0f;   // 2D: same volume anywhere on screen
+        return a;
+    }
+
     static Sprite Piece(string name)
     {
         foreach (string f in PieceFolders)
@@ -297,7 +313,10 @@ public static class LevelBuilder
         CircleCollider2D body = alien.GetComponent<CircleCollider2D>();
         body.radius = 0.3f;
         body.offset = new Vector2(0f, -0.2f);
-        alien.AddComponent<AlienPlayer>().disguiseSprite = Piece("folk_soldier");
+        AlienPlayer ap = alien.AddComponent<AlienPlayer>();
+        ap.disguiseSprite = Piece("folk_soldier");
+        ap.beamAudio = Sound(alien, "freesound_beam.wav", false, 0.6f);
+        ap.walkingAudio = Sound(alien, "freesound_community-walking-on-the-muddy-road-29586.mp3", true, 0.5f);
         alien.AddComponent<SortByY>();
         if (map.Night)
             AddLight(alien.transform, "Alien glow", Vector2.zero, new Color(0.55f, 1f, 0.6f), 0.55f, 2.6f, 0.3f).transform.localPosition = Vector3.zero;
@@ -316,10 +335,13 @@ public static class LevelBuilder
             civ.GetComponent<SpriteRenderer>().sprite = Piece(c.sprite);
             Civilian script = civ.AddComponent<Civilian>();
             script.heartSprite = heart;
+            script.friendshipNoise = Clip(i % 2 == 0 ? "freesound_community-wow.mp3" : "floraphonic-teenage-girl-says-yay-185316.mp3");
             if (c.lookout)
             {
                 script.holdsPosition = true;
-                civ.AddComponent<TownLookout>();
+                TownLookout look = civ.AddComponent<TownLookout>();
+                look.alarm = Sound(civ, "freesound_alarm 1.wav", false, 0.7f);
+                look.gasp = Sound(civ, "freesound_community-gasp-7063.mp3", false, 0.8f);
             }
             if (c.IsPolice)
             {

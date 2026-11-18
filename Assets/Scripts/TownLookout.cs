@@ -11,6 +11,8 @@ public class TownLookout : MonoBehaviour
     public float alarmRadius = 7f;     // tiles; who hears the alarm
     public float warningTime = 1.2f;   // seconds of "!" before the alarm goes off
     public float alarmCooldown = 6f;
+    public AudioSource alarm;          // sounds (Talia)
+    public AudioSource gasp;
 
     public static int AlarmsRung { get; private set; }
 
@@ -73,6 +75,8 @@ public class TownLookout : MonoBehaviour
         cooldown = alarmCooldown;
         AlarmsRung++;
         Civilian.AlertAround(transform.position, alarmRadius);
+        if (gasp != null) gasp.Play();
+        if (alarm != null) alarm.Play();
 
         // A red pulse showing how far the alarm reached
         GameObject pulse = new GameObject("Alarm Pulse");

@@ -78,6 +78,7 @@ public class LevelManager : MonoBehaviour
         if (complete || gameOver) return;
         complete = true;
         winPopupOpen = false;
+        Scoreboard.Record(LevelNumber, friends, totalPeople, true);
         Flash("The alien was knocked out, but the meter was full!", 2f);
         Invoke(nameof(ShowEnding), 1.5f);
     }

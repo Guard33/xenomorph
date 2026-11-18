@@ -30,3 +30,13 @@ Art/Level3Pieces:
 
 Art/Alien:
   alien_idle_0/1 - green slime alien (2-frame idle bounce). Found by Talia.
+
+Art/Audio (found by Talia, from her talia-level1-audio branch):
+  freesound_beam.wav                     - every beam (Small Beam, Wide Wave, Long Beam)
+  freesound_community-walking-...mp3     - alien footsteps (loops while moving)
+  freesound_community-wow.mp3,
+  floraphonic-teenage-girl-says-yay.mp3  - a person is befriended (alternates)
+  freesound_alarm 1.wav, ...-gasp-7063.mp3 - a lookout/sentry rings the alarm
+  Sources: Freesound / Pixabay. Each sound's licence and author still need to be checked
+  and written here before this is merged to main (the repo is public).
+  The Level Builder hooks the sounds up for every level.

@@ -44,7 +44,7 @@ public class AimArrow : MonoBehaviour
         GameObject go = new GameObject("Aim Arrow");
         AimArrow arrow = go.AddComponent<AimArrow>();
         arrow.player = p;
-        arrow.sr = go.AddComponent<SpriteRenderer>();
+        arrow.sr = go.AddComponent<SpriteRenderer>(); Glow.Unlit(arrow.sr);   // stays bright on night levels
         arrow.sr.sprite = ArrowSprite;
         arrow.sr.sortingOrder = 28990;   // above the map, just under the beam
         arrow.angle = Angle(p.Facing);
