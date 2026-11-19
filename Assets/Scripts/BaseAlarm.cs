@@ -61,6 +61,7 @@ public class BaseAlarm : MonoBehaviour
     void OnGUI()
     {
         if (!Active || LevelManager.Instance == null || LevelManager.Instance.IsComplete || LevelManager.Instance.IsGameOver) return;
+        Hud.Use(GameSettings.UiPart.Tips);
         float k = Hud.Scale, u = Hud.Unit, W = Screen.width, H = Screen.height;
         float a = 0.25f + 0.2f * Mathf.Sin(Time.unscaledTime * 8f);
         Color red = new Color(0.9f, 0.1f, 0.1f, a);
@@ -72,7 +73,7 @@ public class BaseAlarm : MonoBehaviour
 
         string text = "BASE ALARM " + Mathf.CeilToInt(timer);
         float w = Hud.TextWidth(text, 15) + 28f * k;
-        Rect r = new Rect(10f * k, 104f * k, w, 30f * k);
+        Rect r = new Rect(10f * k, LevelManager.Instance.BoardBottom + 10f * k, w, 30f * k);
         Hud.Panel(r, new Color(0.45f, 0.06f, 0.06f, 0.92f));
         Hud.Text(r, text, 15, Color.white);
     }

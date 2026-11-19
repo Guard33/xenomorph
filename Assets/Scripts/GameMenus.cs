@@ -16,6 +16,20 @@ public static class GameSettings
     }
     public static float MiniMapWidth => MiniMapWidths[MiniMapSize];
 
+    // Size of each part of the UI, for accessibility
+    public enum UiPart { Board, Meter, Skills, Tips, Menus }
+    public static readonly string[] UiSizes = { "Small", "Medium", "Large", "Huge" };
+    static readonly float[] HudScales = { 0.8f, 1f, 1.3f, 1.6f };
+    static readonly float[] MenuScales = { 0.85f, 1f, 1.1f, 1.2f };
+
+    public static int UiSize(UiPart part) => Mathf.Clamp(PlayerPrefs.GetInt("xeno_ui_" + part, 1), 0, UiSizes.Length - 1);
+    public static void SetUiSize(UiPart part, int size)
+    {
+        PlayerPrefs.SetInt("xeno_ui_" + part, (size + UiSizes.Length) % UiSizes.Length);
+        PlayerPrefs.Save();
+    }
+    public static float UiScale(UiPart part) => (part == UiPart.Menus ? MenuScales : HudScales)[UiSize(part)];
+
     public static float Volume
     {
         get => PlayerPrefs.GetFloat(VolumeKey, 0.8f);
@@ -55,6 +69,7 @@ public static class MenuPages
     // Returns true when Back is clicked
     public static bool DrawControls(AlienPlayer alien)
     {
+        Hud.Use(GameSettings.UiPart.Menus);
         float W = Screen.width, H = Screen.height, k = Hud.Scale;
         Dim();
         float w = Mathf.Min(W - 40f * k, 1180f * k), h = Mathf.Min(H - 40f * k, 640f * k);
@@ -126,9 +141,10 @@ public static class MenuPages
     // Returns true when Back is clicked
     public static bool DrawSettings()
     {
+        Hud.Use(GameSettings.UiPart.Menus);
         float W = Screen.width, H = Screen.height, k = Hud.Scale, u = Hud.Unit;
         Dim();
-        float w = 560f * k, h = 460f * k;
+        float w = 600f * k, h = 820f * k;
         Rect r = new Rect((W - w) / 2f, (H - h) / 2f, w, h);
         Hud.Panel(r, PanelColor);
         Hud.Text(new Rect(r.x, r.y + 18f * k, w, 40f * k), "SETTINGS", 30, Title);
@@ -158,6 +174,20 @@ public static class MenuPages
         Hud.Text(new Rect(r.x + 40f * k, y, 160f * k, 44f * k), "Mini map", 16, Body, TextAnchor.MiddleLeft);
         if (Button(new Rect(r.x + 230f * k, y, 160f * k, 44f * k), GameSettings.MiniMapSizes[GameSettings.MiniMapSize], false))
             GameSettings.MiniMapSize++;
+
+        // Size of each part of the HUD and the menus (click to cycle)
+        y += 66f * k;
+        Hud.Text(new Rect(r.x, y, w, 30f * k), "Interface size", 16, Title);
+        string[] names = { "Friends board", "Friend meter", "Skill bar", "Tips, messages", "Menus" };
+        for (int i = 0; i < names.Length; i++)
+        {
+            y += 54f * k;
+            GameSettings.UiPart part = (GameSettings.UiPart)i;
+            Hud.Text(new Rect(r.x + 40f * k, y, 200f * k, 44f * k), names[i], 14, Body, TextAnchor.MiddleLeft);
+            if (Button(new Rect(r.x + 280f * k, y, 160f * k, 44f * k), GameSettings.UiSizes[GameSettings.UiSize(part)], false, 16))
+                GameSettings.SetUiSize(part, GameSettings.UiSize(part) + 1);
+            Hud.Use(GameSettings.UiPart.Menus);
+        }
 
         Rect back = new Rect(r.x + (w - 220f * k) / 2f, r.yMax - 70f * k, 220f * k, 48f * k);
         return Button(back, "Back", false);

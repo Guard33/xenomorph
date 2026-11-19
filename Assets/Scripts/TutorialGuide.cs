@@ -142,6 +142,7 @@ public class TutorialGuide : MonoBehaviour
 
         // Fade each line in
         float a = Mathf.Clamp01(stepTime * 3f);
+        Hud.Use(GameSettings.UiPart.Tips);
         float k = Hud.Scale;
         // Speech bubble behind the tip so it reads over any part of the map
         float w = Hud.TextWidth(text, 18) + 48f * k, h = 46f * k;

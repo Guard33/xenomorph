@@ -79,6 +79,7 @@ public class AlienPlayer : MonoBehaviour
 
     void Start()
     {
+        if (GetComponent<AlwaysVisible>() == null) gameObject.AddComponent<AlwaysVisible>();   // never fully hidden behind a structure
         // J is the skill picked on the Evolve screen after Level 1.
         // Testing Level 2 straight from the editor (nothing picked) uses the level's default.
         int level = LevelInfo.Instance != null ? LevelInfo.Instance.level : 1;

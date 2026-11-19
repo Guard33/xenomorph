@@ -193,6 +193,7 @@ public class LevelManager : MonoBehaviour
     // bottom-left, H J K L keys bottom-right. The mini map draws itself top-right.
     void OnGUI()
     {
+        Hud.Use(GameSettings.UiPart.Board);
         float k = Hud.Scale;
         float u = Hud.Unit;
         float W = Screen.width, H = Screen.height;
@@ -207,6 +208,7 @@ public class LevelManager : MonoBehaviour
         float boardW = Mathf.Max(Hud.TextWidth(friendsLine, 15), Hud.TextWidth(escapedLine, 15)) + 32f * k;
         if (showHp) boardW = Mathf.Max(boardW, alien.maxHp * 5 * u + 22f * k);
         Hud.Board(new Rect(10f * k, 8f * k, boardW, (showHp ? 86f : 68f) * k));
+        BoardBottom = (8f + (showHp ? 86f : 68f)) * k;
         Hud.Text(new Rect(tx, 16f * k, 400f * k, 20f * k), friendsLine, 15, Color.white, TextAnchor.MiddleLeft);
         Hud.Text(new Rect(tx, 40f * k, 400f * k, 20f * k), escapedLine, 15, escaped > 0 ? new Color(1f, 0.62f, 0.55f) : new Color(1f, 0.93f, 0.8f), TextAnchor.MiddleLeft);
 
@@ -216,6 +218,8 @@ public class LevelManager : MonoBehaviour
                 Hud.Fill(new Rect(tx + i * 5 * u, 64f * k, 4 * u, 4 * u), i < alien.Hp ? new Color(0.95f, 0.3f, 0.35f) : new Color(0f, 0f, 0f, 0.35f));
 
         // Bottom-left: friendship meter (pixel bar)
+        Hud.Use(GameSettings.UiPart.Meter);
+        k = Hud.Scale; u = Hud.Unit;
         float bw = 70 * u, bh = 4 * u;
         float bx = Mathf.Round(14f * k), by = Mathf.Round(H - 16f * k - bh);
         Hud.Text(new Rect(bx, by - 26f * k, 400f * k, 20f * k), "Friendship " + Mathf.Min(Exp, ExpNeeded) + "/" + ExpNeeded, 13, Color.white, TextAnchor.MiddleLeft);
@@ -224,8 +228,11 @@ public class LevelManager : MonoBehaviour
         Hud.Fill(new Rect(bx + u, by + u, Mathf.Round(fill / u) * u, bh - 2 * u), Pink);
 
         // Bottom-right: skill keys H J K L
-        if (alien != null) DrawSkills(k, u);
+        Hud.Use(GameSettings.UiPart.Skills);
+        if (alien != null) DrawSkills(Hud.Scale, Hud.Unit);
 
+        Hud.Use(GameSettings.UiPart.Tips);
+        k = Hud.Scale; u = Hud.Unit;
         if (flashTimer > 0f && !string.IsNullOrEmpty(flashText))
             Hud.Text(new Rect(0, H * 0.3f, W, 30f * k), flashText, 18, new Color(1f, 0.9f, 0.5f, Mathf.Clamp01(flashTimer * 2f)));
 
@@ -238,8 +245,12 @@ public class LevelManager : MonoBehaviour
             Hud.Text(r, bigMessage, 18, Color.white);
         }
 
-        if (showEnding) DrawEnding(k);
+        Hud.Use(GameSettings.UiPart.Menus);
+        if (showEnding) DrawEnding(Hud.Scale);
     }
+
+    // Bottom of the friends board in screen pixels (the alarm banner goes under it)
+    public float BoardBottom { get; private set; } = 80f;
 
     // Small card on the right when the friendship meter fills. Close with the X or Esc;
     // the player can keep brainwashing the rest of the town afterwards.

@@ -5,7 +5,12 @@ using UnityEngine;
 // Sizes are for a 1080p screen and scale with the window.
 public static class Hud
 {
-    public static float Scale => Mathf.Max(0.75f, Screen.height / 1080f);
+    public static float Scale => Mathf.Max(0.75f, Screen.height / 1080f) * Mult;
+
+    // Size of the UI part being drawn (Settings: Small / Medium / Large / Huge for each part).
+    // Each OnGUI calls Use(...) before drawing a part.
+    public static float Mult = 1f;
+    public static void Use(GameSettings.UiPart part) { Mult = GameSettings.UiScale(part); }
 
     // 'size' is a font size in points; it is snapped to whole font pixels so text stays crisp
     public static void Text(Rect r, string text, int size, Color color, TextAnchor anchor = TextAnchor.MiddleCenter, bool bold = false)

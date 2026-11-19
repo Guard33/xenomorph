@@ -245,23 +245,26 @@ public static class LevelBuilder
                 }
                 else if (sr.sprite != null && IsMilitary(o.sprite))
                 {
-                    // Military sprites aren't whole tiles: fit the box to the drawing (bottom part for buildings)
+                    // Military sprites aren't whole tiles: fit the box to the drawing. Buildings block all
+                    // but the very top of the roof, so the alien can't walk in behind them and vanish
                     Vector2 size = sr.sprite.bounds.size;
-                    float h = o.kind == "building" ? size.y * 0.7f : size.y;
+                    float h = o.kind == "building" ? size.y * 0.9f : size.y;
                     box.offset = new Vector2(size.x / 2f, h / 2f);
                     box.size = new Vector2(Mathf.Max(0.2f, size.x - 0.1f), Mathf.Max(0.2f, h - 0.05f));
                 }
                 else
                 {
-                    box.offset = new Vector2(o.w / 2f, o.h * 0.35f);
-                    box.size = new Vector2(o.w - 0.15f, o.h * 0.7f - 0.1f);
+                    // The whole footprint except a sliver at the top: the alien can't walk into the
+                    // drawing (yards, pens, roofs) and get hidden behind it
+                    box.offset = new Vector2(o.w / 2f, o.h * 0.45f);
+                    box.size = new Vector2(o.w - 0.15f, o.h * 0.9f - 0.05f);
                 }
             }
             else if (o.kind == "tree")
             {
                 CircleCollider2D c = go.AddComponent<CircleCollider2D>();
-                c.offset = new Vector2(0.5f, 0.35f);
-                c.radius = 0.28f;
+                c.offset = new Vector2(0.5f, 0.4f);
+                c.radius = 0.38f;   // most of the canopy, so the alien can't tuck in behind a tree
             }
             else if (o.kind == "lamp")
             {

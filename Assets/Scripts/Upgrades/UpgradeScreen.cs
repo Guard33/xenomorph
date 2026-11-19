@@ -81,6 +81,7 @@ public class UpgradeScreen : MonoBehaviour
     // ------------------------------------------------------------------ drawing
     void OnGUI()
     {
+        Hud.Use(GameSettings.UiPart.Menus);
         float k = Hud.Scale;
         float W = Screen.width, H = Screen.height;
         int next = UpgradePath.NextTier;

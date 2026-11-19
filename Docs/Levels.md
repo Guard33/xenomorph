@@ -82,5 +82,5 @@ To play: open `Assets/Scenes/StartScreen.unity`, press Play, then Enter. **Stage
 | M | show / hide the mini map |
 | R | restart the level |
 | Tab | controls page (every key and how to play); also on the start screen |
-| Esc | pause menu: resume, restart, controls, settings (volume, fullscreen), main menu, quit |
+| Esc | pause menu: resume, restart, controls, settings (volume, fullscreen, mini map size, and the size of the friends board, friend meter, skill bar, tips and menus), main menu, quit |
 | S | stage select (start screen) |

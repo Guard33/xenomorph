@@ -105,6 +105,7 @@ public class MenuScreen : MonoBehaviour
     // Same pixel-art style as the in-game HUD (PixelFont + Hud panels and buttons)
     void OnGUI()
     {
+        Hud.Use(GameSettings.UiPart.Menus);
         if (stageSelect) { DrawStageSelect(); return; }
         if (scores.Open) { scores.Draw(); return; }
         if (showControls) { if (MenuPages.DrawControls(null)) showControls = false; return; }

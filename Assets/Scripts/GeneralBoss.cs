@@ -144,6 +144,7 @@ public class GeneralBoss : MonoBehaviour
     void OnGUI()
     {
         if (!civ.CanBeBefriended || LevelManager.Instance == null || LevelManager.Instance.IsComplete) return;
+        Hud.Use(GameSettings.UiPart.Tips);
         float k = Hud.Scale, u = Hud.Unit;
         float w = 360f * k, h = 6 * u;
         float x = (Screen.width - w) / 2f, y = 100f * k;   // below the tip bubble

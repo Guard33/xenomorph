@@ -122,6 +122,7 @@ public class PauseMenu : MonoBehaviour
     void OnGUI()
     {
         if (page == Page.None) return;
+        Hud.Use(GameSettings.UiPart.Menus);
         GUI.depth = -100;   // on top of the HUD
         if (page == Page.Controls) { if (MenuPages.DrawControls(alien)) Back(); return; }
         if (page == Page.Settings) { if (MenuPages.DrawSettings()) Back(); return; }
