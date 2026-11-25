@@ -111,6 +111,7 @@ public static class MenuPages
             "Soldiers shoot darts, and the",
             "  alarm puts every guard on you.",
             "Green arrow = where you aim.",
+            "Quick friends in a row = combo!",
             "Fill the meter to evolve",
             "  and learn a new skill.",
         };

@@ -9,6 +9,9 @@ using UnityEngine.InputSystem;
 // Once every person is either befriended or gone (and the meter is full), the level is complete.
 // Also draws the pixel-art HUD: score, friendship meter, skill keys, popups and the ending screen.
 // When a level ends, the run is saved on the Scoreboard (how many people were befriended).
+// Combo and star rating (Danesh), from Jory's plan in Docs/Progression.md:
+// befriend people quickly one after another for a combo bonus, and a cleared level gets
+// 1 to 3 stars depending on how many people escaped.
 public class LevelManager : MonoBehaviour
 {
     public static LevelManager Instance { get; private set; }
@@ -17,6 +20,9 @@ public class LevelManager : MonoBehaviour
     public int friendsNeeded = 10;
     public int expPerFriend = 10;
     public bool alienCanDie = false;   // Level 1 is the tutorial: HP never drops below 1
+
+    public float comboWindow = 3f;     // seconds to befriend the next person and keep a combo going
+    public int comboBonus = 5;         // bonus per extra person in a combo: x2 = +5, x3 = +10, x4 = +15 ...
 
     private int friends;
     private int escaped;
@@ -30,6 +36,14 @@ public class LevelManager : MonoBehaviour
     private float flashTimer;
     private AlienPlayer alien;
 
+    private int combo;                 // people befriended in a row, each within comboWindow of the last
+    private int bestCombo;
+    private int bonus;                 // total combo bonus this run
+    private int lastBonus;             // bonus from the latest friend, for the popup
+    private float comboTimer;          // seconds left to keep the combo going
+    private float comboPop;            // the combo text pops bigger for a moment
+    private float endingTime;          // when the level complete card opened (stars appear one by one)
+
     public int Friends => friends;
     public int Escaped => escaped;
     public bool Won => won;
@@ -37,6 +51,26 @@ public class LevelManager : MonoBehaviour
     public bool IsGameOver => gameOver;
     public int Exp => friends * expPerFriend;
     public int ExpNeeded => friendsNeeded * expPerFriend;
+    public int Combo => combo;
+    public int BestCombo => bestCombo;
+    public int Bonus => bonus;
+    public int Score => Exp + bonus;
+
+    // Escapes a player can afford before the level is lost
+    public int EscapesAllowed => totalPeople - friendsNeeded;
+
+    // Star rating for a cleared level (0 if the meter is not full):
+    // 1 star = cleared, 2 stars = half the allowed escapes or fewer, 3 stars = nobody escaped
+    public int Stars
+    {
+        get
+        {
+            if (!won) return 0;
+            if (escaped == 0) return 3;
+            if (escaped <= EscapesAllowed / 2) return 2;
+            return 1;
+        }
+    }
 
     static readonly Color Pink = new Color(0.96f, 0.45f, 0.68f);
     static readonly Color Green = new Color(0.55f, 1f, 0.6f);
@@ -53,12 +87,29 @@ public class LevelManager : MonoBehaviour
     public void PersonBefriended()
     {
         friends++;
+        AddToCombo();
         if (friends >= friendsNeeded && !won && !gameOver)
         {
             won = true;
             winPopupOpen = true;
         }
         CheckComplete();
+    }
+
+    // Combo: a friend made within comboWindow seconds of the last one adds to the combo.
+    // Every extra person in a combo gives a bonus (x2 = +5, x3 = +10 ...). Wide Wave and
+    // Friend Trap can start a big combo in one go.
+    void AddToCombo()
+    {
+        combo = comboTimer > 0f ? combo + 1 : 1;
+        comboTimer = comboWindow;
+        if (combo > bestCombo) bestCombo = combo;
+        if (combo >= 2)
+        {
+            lastBonus = comboBonus * (combo - 1);
+            bonus += lastBonus;
+            comboPop = 0.25f;
+        }
     }
 
     public void PersonEscaped()
@@ -78,7 +129,7 @@ public class LevelManager : MonoBehaviour
         if (complete || gameOver) return;
         complete = true;
         winPopupOpen = false;
-        Scoreboard.Record(LevelNumber, friends, totalPeople, true);
+        Scoreboard.Record(LevelNumber, friends, totalPeople, true, Stars, bestCombo);
         Flash("The alien was knocked out, but the meter was full!", 2f);
         Invoke(nameof(ShowEnding), 1.5f);
     }
@@ -89,13 +140,14 @@ public class LevelManager : MonoBehaviour
         if (complete || gameOver || !won || friends + escaped < totalPeople) return;
         complete = true;
         winPopupOpen = false;
-        Scoreboard.Record(LevelNumber, friends, totalPeople, true);   // save the run on the scoreboard
+        Scoreboard.Record(LevelNumber, friends, totalPeople, true, Stars, bestCombo);   // save the run on the scoreboard
         Invoke(nameof(ShowEnding), 1.2f);   // let the last beam-up finish
     }
 
     void ShowEnding()
     {
         showEnding = true;
+        endingTime = Time.unscaledTime;   // the game is paused, so the stars use unscaled time
         Time.timeScale = 0f;
     }
 
@@ -104,7 +156,7 @@ public class LevelManager : MonoBehaviour
         if (gameOver) return;
         gameOver = true;
         bigMessage = reason;
-        Scoreboard.Record(LevelNumber, friends, totalPeople, false);  // lost runs count on the scoreboard too
+        Scoreboard.Record(LevelNumber, friends, totalPeople, false, 0, bestCombo);  // lost runs count on the scoreboard too
         GameResult.Level = LevelNumber;
         GameResult.Reason = reason;
         GameResult.Friends = friends;
@@ -167,6 +219,12 @@ public class LevelManager : MonoBehaviour
     void Update()
     {
         if (flashTimer > 0f) flashTimer -= Time.deltaTime;
+        if (comboPop > 0f) comboPop -= Time.deltaTime;
+        if (comboTimer > 0f)
+        {
+            comboTimer -= Time.deltaTime;
+            if (comboTimer <= 0f) combo = 0;   // too slow: the combo is over
+        }
         if (PauseMenu.IsOpen) return;   // the pause menu handles keys while it is open
 #if ENABLE_INPUT_SYSTEM
         Keyboard kb = Keyboard.current;
@@ -236,6 +294,8 @@ public class LevelManager : MonoBehaviour
         if (flashTimer > 0f && !string.IsNullOrEmpty(flashText))
             Hud.Text(new Rect(0, H * 0.3f, W, 30f * k), flashText, 18, new Color(1f, 0.9f, 0.5f, Mathf.Clamp01(flashTimer * 2f)));
 
+        if (combo >= 2 && comboTimer > 0f && !showEnding) DrawCombo(k, u);
+
         if (winPopupOpen) DrawWinPopup(k);
 
         if (!string.IsNullOrEmpty(bigMessage))
@@ -251,6 +311,22 @@ public class LevelManager : MonoBehaviour
 
     // Bottom of the friends board in screen pixels (the alarm banner goes under it)
     public float BoardBottom { get; private set; } = 80f;
+
+    // Combo popup above the alien: "x3 COMBO!", the bonus, and a bar for the time left to keep it going
+    void DrawCombo(float k, float u)
+    {
+        float W = Screen.width, H = Screen.height;
+        float a = Mathf.Clamp01(comboTimer * 3f);   // fades out in the last third of a second
+        Color gold = new Color(1f, 0.85f, 0.35f, a);
+        float y = H * 0.36f;
+        Hud.Text(new Rect(0, y, W, 34f * k), "x" + combo + " COMBO!", comboPop > 0f ? 26 : 22, gold);
+        Hud.Text(new Rect(0, y + 34f * k, W, 20f * k), "+" + lastBonus + " bonus", 13, new Color(1f, 1f, 1f, 0.9f * a));
+
+        float bw = 30 * u, bh = 2 * u;
+        float bx = Mathf.Round((W - bw) / 2f), by = Mathf.Round(y + 60f * k);
+        Hud.Fill(new Rect(bx, by, bw, bh), new Color(0f, 0f, 0f, 0.45f * a));
+        Hud.Fill(new Rect(bx, by, Mathf.Round(bw * Mathf.Clamp01(comboTimer / comboWindow) / u) * u, bh), gold);
+    }
 
     // Small card on the right when the friendship meter fills. Close with the X or Esc;
     // the player can keep brainwashing the rest of the town afterwards.
@@ -279,17 +355,20 @@ public class LevelManager : MonoBehaviour
         float W = Screen.width, H = Screen.height;
         Hud.Fill(new Rect(0, 0, W, H), new Color(0.02f, 0.03f, 0.05f, 0.7f));
 
-        float w = 520f * k, h = 330f * k;
+        float w = 520f * k, h = 420f * k;
         Rect r = new Rect((W - w) / 2f, (H - h) / 2f, w, h);
         Hud.Panel(r, PanelColor);
 
-        Hud.Text(new Rect(r.x, r.y + 26f * k, w, 36f * k), "Level complete!", 28, Green);
-        Hud.Text(new Rect(r.x, r.y + 84f * k, w, 20f * k), LevelMap.Current.Name + " is brainwashed", 14, Color.white);
-        Hud.Text(new Rect(r.x, r.y + 120f * k, w, 20f * k), "Friends " + friends + "   Escaped " + escaped, 15, Pink);
+        Hud.Text(new Rect(r.x, r.y + 22f * k, w, 36f * k), "Level complete!", 28, Green);
+        DrawStars(r, k);
+        Hud.Text(new Rect(r.x, r.y + 150f * k, w, 20f * k), LevelMap.Current.Name + " is brainwashed", 14, Color.white);
+        Hud.Text(new Rect(r.x, r.y + 178f * k, w, 20f * k), "Friends " + friends + "   Escaped " + escaped, 15, Pink);
+        string comboLine = (bestCombo >= 2 ? "Best combo x" + bestCombo + "   " : "") + "Score " + Score;
+        Hud.Text(new Rect(r.x, r.y + 206f * k, w, 20f * k), comboLine, 14, new Color(0.75f, 0.9f, 1f));
         DrawBest(r, k);
 
         float bh = 52f * k, gap = 18f * k;
-        float by = r.y + 200f * k;
+        float by = r.y + 282f * k;
         if (HasNextLevel)
         {
             // Evolve (or Next level on a replay) / Play again / Menu
@@ -310,14 +389,39 @@ public class LevelManager : MonoBehaviour
         }
     }
 
+    // Three big stars under the title. Earned stars pop in one by one; the rest stay grey.
+    // A line under them says what the next star needs.
+    void DrawStars(Rect r, float k)
+    {
+        int stars = Stars;
+        float u = Hud.Unit, big = 2f * u;
+        float cy = r.y + 88f * k, step = 22f * u;
+        float t = Time.unscaledTime - endingTime;
+        for (int i = 0; i < 3; i++)
+        {
+            Vector2 c = new Vector2(r.center.x + (i - 1) * step, cy);
+            float shown = 0.25f + 0.3f * i;   // seconds after the card opens
+            if (i < stars && t >= shown)
+                ScoreboardScreen.Star(c, t < shown + 0.12f ? 3f * u : big, new Color(1f, 0.85f, 0.35f));
+            else
+                ScoreboardScreen.Star(c, big, new Color(0.3f, 0.3f, 0.36f, 0.9f));
+        }
+
+        int half = EscapesAllowed / 2;
+        string hint = stars >= 3 ? "Perfect! Nobody escaped"
+                    : stars == 2 || half <= 0 ? "Let nobody escape for 3 stars"
+                    : "Let " + half + " or fewer escape for 2 stars";
+        Hud.Text(new Rect(r.x, r.y + 120f * k, r.width, 16f * k), hint, 11, new Color(1f, 1f, 1f, 0.6f));
+    }
+
     // Scoreboard line on the level complete card: a new best score, or the best so far
     void DrawBest(Rect r, float k)
     {
         Color gold = new Color(1f, 0.85f, 0.35f);
-        Rect line = new Rect(r.x, r.y + 152f * k, r.width, 22f * k);
-        if (Scoreboard.LastWasNewBest)
+        Rect line = new Rect(r.x, r.y + 234f * k, r.width, 22f * k);
+        if (Scoreboard.LastWasNewBest || Scoreboard.LastWasNewStars)
         {
-            const string text = "New best score!";
+            string text = Scoreboard.LastWasNewBest ? "New best score!" : "New star record!";
             Hud.Text(line, text, 15, gold);
             // A gold star on each side
             float half = Hud.TextWidth(text, 15) / 2f + 24f * k;

@@ -7,7 +7,8 @@ using UnityEngine.InputSystem;
 // The scoreboard (Danesh): how many people the alien befriended on each level.
 // Every time a level ends (complete or lost) the run is saved on this computer (PlayerPrefs):
 // the best number of friends, how many times the level was played, whether it was cleared,
-// and the top 5 runs. The start screen shows it all on the Scoreboard screen.
+// the most stars (1-3) and the best combo, and the top 5 runs.
+// The start screen shows it all on the Scoreboard screen.
 public static class Scoreboard
 {
     public const int TopRuns = 5;
@@ -26,6 +27,7 @@ public static class Scoreboard
     // The result of the last run, for the level complete card
     public static int LastLevel { get; private set; }
     public static bool LastWasNewBest { get; private set; }
+    public static bool LastWasNewStars { get; private set; }   // more stars than ever before on that level
     public static int LastRank { get; private set; }   // 1 = top run, 0 = not in the top 5
 
     static string Key(int level, string what) => "scoreboard.level" + level + "." + what;
@@ -34,6 +36,20 @@ public static class Scoreboard
     public static int People(int level) => PlayerPrefs.GetInt(Key(level, "people"), 0);
     public static int Plays(int level) => PlayerPrefs.GetInt(Key(level, "plays"), 0);
     public static bool Cleared(int level) => PlayerPrefs.GetInt(Key(level, "cleared"), 0) == 1;
+
+    // Most stars on a level. Levels cleared before stars were added count as 1 star.
+    public static int BestStars(int level) => PlayerPrefs.GetInt(Key(level, "stars"), Cleared(level) ? 1 : 0);
+    public static int BestCombo(int level) => PlayerPrefs.GetInt(Key(level, "combo"), 0);
+
+    public static int TotalStars
+    {
+        get
+        {
+            int sum = 0;
+            for (int l = 1; l <= LevelCount; l++) sum += BestStars(l);
+            return sum;
+        }
+    }
 
     // Total of the best scores on every level
     public static int TotalFriends
@@ -55,9 +71,16 @@ public static class Scoreboard
     }
 
     // Saves a finished run. Returns true when it beats the best score on that level.
-    public static bool Record(int level, int friends, int people, bool cleared)
+    // stars: 1-3 for a cleared level, 0 for a lost one. combo: the longest combo in the run.
+    public static bool Record(int level, int friends, int people, bool cleared, int stars = 0, int combo = 0)
     {
         level = Mathf.Clamp(level, 1, LevelCount);
+
+        // Stars and combo first, before "cleared" is saved (old saves count a clear as 1 star)
+        LastWasNewStars = stars > BestStars(level);
+        if (LastWasNewStars) PlayerPrefs.SetInt(Key(level, "stars"), stars);
+        if (combo > BestCombo(level)) PlayerPrefs.SetInt(Key(level, "combo"), combo);
+
         bool newBest = friends > Best(level) || Plays(level) == 0;
         if (friends > Best(level)) PlayerPrefs.SetInt(Key(level, "best"), friends);
         PlayerPrefs.SetInt(Key(level, "people"), people);
@@ -118,7 +141,7 @@ public static class Scoreboard
     public static void ResetAll()
     {
         for (int l = 1; l <= LevelCount; l++)
-            foreach (string w in new[] { "best", "people", "plays", "cleared", "top" })
+            foreach (string w in new[] { "best", "people", "plays", "cleared", "top", "stars", "combo" })
                 PlayerPrefs.DeleteKey(Key(l, w));
         PlayerPrefs.Save();
         LastLevel = 0;
@@ -176,6 +199,7 @@ public class ScoreboardScreen
             Color tc = plays > 0 || sel ? Color.white : new Color(1f, 1f, 1f, 0.45f);
             Hud.Text(new Rect(r.x + 18f * k, r.y + 10f * k, 300f * k, 22f * k), level + "  " + Scoreboard.LevelName(level), 16, tc, TextAnchor.MiddleLeft);
             string sub = plays == 0 ? "Not played yet" : "Played " + plays + (plays == 1 ? " time" : " times");
+            if (Scoreboard.BestCombo(level) >= 2) sub += "   Best combo x" + Scoreboard.BestCombo(level);
             Hud.Text(new Rect(r.x + 18f * k + Hud.TextWidth(level + "  ", 16), r.y + 36f * k, 300f * k, 18f * k), sub, 11, new Color(1f, 1f, 1f, 0.6f), TextAnchor.MiddleLeft);
 
             // Best score bar
@@ -188,8 +212,9 @@ public class ScoreboardScreen
             string score = plays == 0 ? "-" : best + "/" + Scoreboard.People(level);
             Hud.Text(new Rect(bx + bw + 14f * k, r.y, 120f * k, rh), score, 18, plays == 0 ? Dim : Color.white, TextAnchor.MiddleLeft);
 
-            // Star when the level has been cleared
-            if (Scoreboard.Cleared(level)) Star(new Vector2(r.xMax - 40f * k, r.center.y), u, Gold);
+            // Best star rating (1-3) once the level has been cleared
+            int stars = Scoreboard.BestStars(level);
+            if (stars > 0) StarRow(new Vector2(r.xMax - 22f * k - 10f * u, r.center.y), u, stars);
             else if (plays > 0) Hud.Text(new Rect(r.x, r.y, r.width - 20f * k, rh), "not cleared", 11, Dim, TextAnchor.MiddleRight);
 
             if (Hud.Clicked(r)) selected = i;
@@ -198,7 +223,7 @@ public class ScoreboardScreen
 
         // Total of all best scores
         y += 4f * k;
-        Hud.Text(new Rect(0, y, W, 28f * k), "Total friends made: " + Scoreboard.TotalFriends, 18, Pink);
+        Hud.Text(new Rect(0, y, W, 28f * k), "Total friends made: " + Scoreboard.TotalFriends + "   Stars: " + Scoreboard.TotalStars, 18, Pink);
         y += 42f * k;
 
         // Top 5 runs of the selected level
@@ -232,6 +257,13 @@ public class ScoreboardScreen
             else confirmReset = true;
         }
         Hud.Text(new Rect(0, H - 34f * k, W, 22f * k), "W S or 1-" + Scoreboard.LevelCount + " choose level   Esc back", 13, new Color(1f, 1f, 1f, 0.7f));
+    }
+
+    // Three small stars centred on c: gold for the ones earned, grey for the rest
+    public static void StarRow(Vector2 c, float u, int earned)
+    {
+        for (int i = 0; i < 3; i++)
+            Star(new Vector2(c.x + (i - 1) * 10f * u, c.y), u, i < earned ? Gold : new Color(0.3f, 0.3f, 0.36f, 0.9f));
     }
 
     // A small pixel-art star (7 x 7 art pixels)
