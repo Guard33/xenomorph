@@ -199,7 +199,7 @@ public class ScoreboardScreen
             Color tc = plays > 0 || sel ? Color.white : new Color(1f, 1f, 1f, 0.45f);
             Hud.Text(new Rect(r.x + 18f * k, r.y + 10f * k, 300f * k, 22f * k), level + "  " + Scoreboard.LevelName(level), 16, tc, TextAnchor.MiddleLeft);
             string sub = plays == 0 ? "Not played yet" : "Played " + plays + (plays == 1 ? " time" : " times");
-            if (Scoreboard.BestCombo(level) >= 2) sub += "   Best combo x" + Scoreboard.BestCombo(level);
+            if (Scoreboard.BestCombo(level) >= 2) sub += "  Combo x" + Scoreboard.BestCombo(level);   // short, so it does not run into the score bar
             Hud.Text(new Rect(r.x + 18f * k + Hud.TextWidth(level + "  ", 16), r.y + 36f * k, 300f * k, 18f * k), sub, 11, new Color(1f, 1f, 1f, 0.6f), TextAnchor.MiddleLeft);
 
             // Best score bar
