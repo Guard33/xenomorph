@@ -12,6 +12,7 @@ Made by a team of four for **CSCI 3836 (Computer Game Design & Development)** at
 - **Herd the crowd.** Scared people run along the roads and avoid an exit you're guarding, so you can steer them.
 - **Watch the watchers.** Town lookouts watch a circle; soldiers, sentries and watchtower searchlights see in cones. Get spotted on a base and the alarm puts every guard on your trail, firing tranquilliser darts.
 - **Evolve.** Fill the friendship meter to evolve and pick a new skill. Each level's new threat has an answer in the skill tree.
+- **Combos and stars.** Befriend people quickly one after another for a combo bonus. A cleared level gets 1 to 3 stars: fewer escapes, more stars.
 
 | | |
 |---|---|
@@ -84,7 +85,7 @@ Tools/        Python scripts for the Level 2 layout and art
 | | |
 |---|---|
 | Hemanth ([@Guard33](https://github.com/Guard33)) | Project lead, repo and tooling, Level 1 rework, Level 2, AI and pathfinding, pixel UI |
-| Danesh ([@daneshelahi](https://github.com/daneshelahi)) | Original Level 1 map and builder, start / game over screens, mini map, upgrade path and Evolve screen |
+| Danesh ([@daneshelahi](https://github.com/daneshelahi)) | Original Level 1 map and builder, start / game over screens, mini map, upgrade path and Evolve screen, aim arrow, scoreboard, star rating and combos |
 | Jory ([@JustDory](https://github.com/JustDory)) | Progression and difficulty design ([Docs/Progression.md](Docs/Progression.md)) |
 | Talia ([@Talia123456789](https://github.com/Talia123456789)) | All of the game's assets: found the art packs and the alien, made the military base sprites |
 
