@@ -56,6 +56,10 @@ These are the knobs we turn between levels. Only change one or two big ones per 
 - Star rating per level: 1 star = cleared, 2 stars = half the allowed escapes or fewer, 3 stars = no escapes.
 - Bonus EXP for befriending people quickly one after another (a combo), to reward skilled play without making it required.
 
+*Built by Danesh (`LevelManager.cs`, `Scoreboard.cs`):*
+- *Stars show on the level complete card (they pop in one by one) and on the Scoreboard screen, which keeps the most stars for each level.*
+- *Combo: befriend the next person within 3 seconds to keep it going. Each extra person gives a bonus (x2 = +5, x3 = +10, ...). The bonus is added to the score on the level complete card, not to the friendship meter, so it never changes when a level is won. Tune with `comboWindow` and `comboBonus` on the LevelManager.*
+
 ## How to build it in Unity
 
 - Put each level's numbers (civilians, exits, friends needed, civilian speed, notice radius, threats on/off) in one **LevelConfig ScriptableObject** per level.
