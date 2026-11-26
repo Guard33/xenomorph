@@ -104,13 +104,26 @@ public class AlienPlayer : MonoBehaviour
     void UseStageSprites()
     {
         Sprite[] frames = null;
-        for (int st = Stage; st >= 2 && (frames == null || frames.Length == 0); st--)
-            frames = Resources.LoadAll<Sprite>("Alien/stage" + st);
+        int found = Stage;
+        for (; found >= 2 && (frames == null || frames.Length == 0); found--)
+            frames = Resources.LoadAll<Sprite>("Alien/stage" + found);
+        found++;
         if (frames != null && frames.Length > 0)
         {
+            // Frames named walk_* play while moving; everything else is the idle loop
             System.Array.Sort(frames, (a, b) => string.CompareOrdinal(a.name, b.name));
-            if (flipbook != null) flipbook.frames = frames;
-            if (sr != null) sr.sprite = frames[0];
+            Sprite[] walk = System.Array.FindAll(frames, f => f.name.StartsWith("walk"));
+            Sprite[] idle = System.Array.FindAll(frames, f => !f.name.StartsWith("walk"));
+            if (idle.Length == 0) idle = walk;
+            if (flipbook != null)
+            {
+                flipbook.frames = idle;
+                flipbook.walkFrames = walk;
+                flipbook.frameTime = 0.2f;
+            }
+            if (sr != null) sr.sprite = idle[0];
+            // A later stage borrowing an earlier stage's model is drawn a little bigger
+            if (found < Stage) transform.localScale = Vector3.one * (1f + 0.12f * (Stage - found));
         }
         else if (Stage > 1)
             transform.localScale = Vector3.one * (1f + 0.12f * (Stage - 1));
@@ -132,7 +145,12 @@ public class AlienPlayer : MonoBehaviour
 
     void Update()
     {
-        if (IsDead || PauseMenu.IsOpen) { input = Vector2.zero; return; }
+        if (IsDead || PauseMenu.IsOpen)
+        {
+            input = Vector2.zero;
+            if (flipbook != null) flipbook.moving = false;
+            return;
+        }
 
         input = ReadMove();
         if (input.sqrMagnitude > 1f)
@@ -142,6 +160,7 @@ public class AlienPlayer : MonoBehaviour
 
         if (sr != null && Mathf.Abs(input.x) > 0.01f)
             sr.flipX = input.x < 0f;
+        if (flipbook != null) flipbook.moving = input.sqrMagnitude > 0.01f;
 
         for (int i = 0; i < skills.Length; i++)
         {
